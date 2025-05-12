@@ -15,36 +15,45 @@ def ask():
     query = request.form['query']
     try:
         headers = {'Content-Type': 'application/json'}
+        
+        # Prepare prompt for the API
         prompt = f"""
-Answer the following question in a conversational format, giving detailed steps with clear explanations. 
-Include each step as a command and explain what it does.
+        Answer the following question in a conversational format, giving detailed steps with clear explanations. 
+        Include each step as a command and explain what it does.
 
-User question: {query}
-"""
+        User question: {query}
+        """
+        
+        # Prepare the data for the API request
         data = {
-            "contents": [ {
+            "contents": [{
                 "parts": [{"text": prompt}]
             }]
         }
+
+        # Make the API request
         response = requests.post(GEMINI_URL, headers=headers, json=data)
         result = response.json()
+
+        # Extract the reply from the response
         reply = result['candidates'][0]['content']['parts'][0]['text']
 
-        # Clean up any unwanted HTML tags or line breaks if they appear
+        # Clean up unwanted HTML tags or line breaks
         reply = reply.replace('<br>', '\n')  # Replace <br> tags with newline
         reply = reply.strip()  # Remove leading/trailing whitespace
 
-        # If there are extra HTML tags like <p>, <div>, etc., remove them
+        # Remove any additional HTML tags (like <p>, <div>, etc.)
         reply = reply.replace('<p>', '').replace('</p>', '')
         reply = reply.replace('<div>', '').replace('</div>', '')
 
-        # If the response isn't as expected (empty or very brief), append a more detailed response
+        # If the response is too brief or empty, provide a default message
         if not reply or len(reply.splitlines()) < 3:
             reply = "⚠️ Sorry, I wasn't able to get a detailed response. Here's a basic guide:\n\nStep 1: Run 'sudo apt update'\nStep 2: Run 'sudo apt install nginx'\nStep 3: Run 'sudo systemctl start nginx'\nStep 4: Run 'sudo systemctl enable nginx'\nStep 5: Run 'sudo systemctl status nginx'"
 
     except Exception as e:
         reply = f"⚠️ Error: {str(e)}"
     
+    # Return the response to the template
     return render_template('index.html', query=query, response=reply)
 
 if __name__ == '__main__':
