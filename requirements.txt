@@ -1,2 +1,4 @@
-flask
-requests
+flask>=2.0.0
+requests>=2.25.0
+markdown>=3.3.0
+pygments>=2.10.0
