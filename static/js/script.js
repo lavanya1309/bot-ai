@@ -49,4 +49,43 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add click handlers for suggestion buttons
     document.querySelectorAll('.suggestion-btn').forEach(button => {
         button.addEventListener('click', function() {
-            input.
+            input.value = this.textContent;
+            input.focus();
+        });
+    });
+
+    // Function to add a message to the chat
+    function addMessage(content, sender, isError = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isError ? 'error' : ''}`;
+
+        if (sender === 'user') {
+            messageDiv.innerHTML = `
+                <div class="user-message">
+                    <div class="avatar"><i class="fas fa-user"></i></div>
+                    <div class="content">${content}</div>
+                </div>
+            `;
+        } else {
+            messageDiv.innerHTML = `
+                <div class="ai-message">
+                    <div class="avatar"><i class="fas fa-robot"></i></div>
+                    <div class="content">${content}</div>
+                </div>
+            `;
+        }
+
+        chatContainer.appendChild(messageDiv);
+
+        // Highlight any code blocks
+        document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightElement(block);
+        });
+
+        // Scroll to the new message
+        messageDiv.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Auto-focus input on page load
+    input.focus();
+});
