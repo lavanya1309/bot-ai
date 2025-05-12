@@ -3,72 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Assistant</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-        .container {
-            width: 80%;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            text-align: center;
-        }
-        .response {
-            margin-top: 20px;
-            background-color: #f9f9f9;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-        }
-        input, button {
-            padding: 10px;
-            margin: 10px 0;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        pre {
-            white-space: pre-wrap;       /* Ensures the text wraps properly */
-            word-wrap: break-word;       /* Breaks long words if necessary */
-        }
-    </style>
+    <title>DeepSeek-like AI Assistant</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
 </head>
 <body>
-    <div class="container">
-        <h1>AI Assistant</h1>
-        <form action="/ask" method="POST">
-            <label for="query">Ask a question:</label>
-            <input type="text" id="query" name="query" placeholder="Enter your question here" required>
-            <button type="submit">Ask</button>
-        </form>
+    <div class="app-container">
+        <header class="app-header">
+            <h1><i class="fas fa-robot"></i> AI Assistant</h1>
+            <p class="subtitle">Ask me anything, and I'll help like DeepSeek</p>
+        </header>
 
-        {% if query %}
-            <h3>Response for your query:</h3>
-            <div class="response">
-                <pre>{{ response|safe }}</pre>
+        <div class="chat-container" id="chatContainer">
+            <!-- Messages will appear here -->
+            {% for item in conversation %}
+                <div class="message {% if item.is_error %}error{% endif %}">
+                    <div class="user-message">
+                        <div class="avatar"><i class="fas fa-user"></i></div>
+                        <div class="content">{{ item.query }}</div>
+                    </div>
+                    <div class="ai-message">
+                        <div class="avatar"><i class="fas fa-robot"></i></div>
+                        <div class="content">{{ item.response|safe }}</div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <form id="queryForm" class="query-form">
+            <div class="input-group">
+                <input type="text" id="queryInput" placeholder="Ask your question..." required>
+                <button type="submit" id="submitBtn">
+                    <i class="fas fa-paper-plane"></i> Send
+                </button>
             </div>
-        {% endif %}
+            <div class="suggestions">
+                <span>Try asking:</span>
+                <button type="button" class="suggestion-btn">How to install Python?</button>
+                <button type="button" class="suggestion-btn">Fix 'ModuleNotFoundError'</button>
+                <button type="button" class="suggestion-btn">Explain machine learning</button>
+            </div>
+        </form>
     </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="/static/js/script.js"></script>
 </body>
 </html>
