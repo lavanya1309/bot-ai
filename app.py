@@ -50,8 +50,18 @@ def ask():
 
         reply = result['choices'][0]['message']['content']
         
-        # Format and return response (same as before)
-        # ... [rest of your existing code]
+        # Store the conversation
+        conversation_history.append({'query': query, 'response': reply})
+        
+        # Format the response (you should include your format_code_blocks function here)
+        formatted_reply = format_code_blocks(reply)
+        
+        return jsonify({'response': formatted_reply})
+    
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f"API request failed: {str(e)}"})
+    except Exception as e:
+        return jsonify({'error': f"An error occurred: {str(e)}"})
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
