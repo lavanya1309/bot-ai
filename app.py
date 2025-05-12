@@ -16,14 +16,16 @@ def ask():
     try:
         headers = {'Content-Type': 'application/json'}
         prompt = f"""
-Answer the following in clear step-by-step format.
+Answer the following in a step-by-step format with each command on a new line.
 Use:
 Step 1:
 <command>
 Step 2:
 <command>
-Do NOT use any extra explanation or HTML or **bold text** or code blocks.
-Just list steps one after another.
+Step 3:
+<command>
+Do NOT use extra explanation, bold text, or HTML formatting.
+
 User question: {query}
 """
         data = {
@@ -35,11 +37,13 @@ User question: {query}
         result = response.json()
         reply = result['candidates'][0]['content']['parts'][0]['text']
 
-        # Convert plain text with \n into HTML <br> for rendering
-        reply = reply.replace('\n', '<br>')
+        # Now, remove <br> tags or other HTML if present, leaving just the commands as plain text
+        reply = reply.replace('<br>', '\n')  # If there's any <br> left, convert it to newlines
+        reply = reply.strip()  # Remove any extra spaces or lines
 
     except Exception as e:
         reply = f"⚠️ Error: {str(e)}"
+    
     return render_template('index.html', query=query, response=reply)
 
 if __name__ == '__main__':
