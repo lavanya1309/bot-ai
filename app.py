@@ -29,7 +29,7 @@ Do NOT use extra explanation, bold text, or HTML formatting.
 User question: {query}
 """
         data = {
-            "contents": [{
+            "contents": [ {
                 "parts": [{"text": prompt}]
             }]
         }
@@ -37,9 +37,13 @@ User question: {query}
         result = response.json()
         reply = result['candidates'][0]['content']['parts'][0]['text']
 
-        # Now, remove <br> tags or other HTML if present, leaving just the commands as plain text
-        reply = reply.replace('<br>', '\n')  # If there's any <br> left, convert it to newlines
-        reply = reply.strip()  # Remove any extra spaces or lines
+        # Now, remove any unnecessary HTML tags, and format the response
+        reply = reply.replace('<br>', '\n')  # If there are <br> tags, replace them with newlines
+        reply = reply.strip()  # Clean any leading/trailing spaces
+
+        # Further sanitize if there's HTML like <p> or <div> that we don't want
+        reply = reply.replace('<p>', '').replace('</p>', '')
+        reply = reply.replace('<div>', '').replace('</div>', '')
 
     except Exception as e:
         reply = f"⚠️ Error: {str(e)}"
