@@ -1,60 +1,70 @@
-from flask import Flask, render_template, request
-import requests
-
-app = Flask(__name__)
-
-GEMINI_API_KEY = "AIzaSyCFU2WJ3G2Szis2xdII2krXONqa0pM_iik"
-GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
-
-@app.route('/')
-def home():
-    return render_template('index.html')
-
-@app.route('/ask', methods=['POST'])
-def ask():
-    query = request.form['query']
-    try:
-        headers = {'Content-Type': 'application/json'}
-        
-        # Prepare the prompt for the API
-        prompt = f"""
-        Answer the following question in a conversational format, giving detailed steps with clear explanations. 
-        Include each step as a command and explain what it does.
-        
-        User question: {query}
-        """
-        
-        # Prepare the data for the API request
-        data = {
-            "contents": [{
-                "parts": [{"text": prompt}]
-            }]
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
         }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        .response {
+            margin-top: 20px;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Assistant</h1>
+        <form action="/ask" method="POST">
+            <label for="query">Ask a question:</label>
+            <input type="text" id="query" name="query" placeholder="Enter your question here" required>
+            <button type="submit">Ask</button>
+        </form>
 
-        # Make the API request
-        response = requests.post(GEMINI_URL, headers=headers, json=data)
-        result = response.json()
-
-        # Extract the reply from the response
-        reply = result['candidates'][0]['content']['parts'][0]['text']
-
-        # Clean up unwanted HTML tags or line breaks
-        reply = reply.replace('<br>', '\n')  # Replace <br> tags with newline
-        reply = reply.strip()  # Remove leading/trailing whitespace
-
-        # Remove any additional HTML tags (like <p>, <div>, etc.)
-        reply = reply.replace('<p>', '').replace('</p>', '')
-        reply = reply.replace('<div>', '').replace('</div>', '')
-
-        # If the response is too brief or empty, provide a default message
-        if not reply or len(reply.splitlines()) < 3:
-            reply = "⚠️ Sorry, I wasn't able to get a detailed response. Here's a basic guide:\n\nStep 1: Run 'sudo apt update'\nStep 2: Run 'sudo apt install nginx'\nStep 3: Run 'sudo systemctl start nginx'\nStep 4: Run 'sudo systemctl enable nginx'\nStep 5: Run 'sudo systemctl status nginx'"
-
-    except Exception as e:
-        reply = f"⚠️ Error: {str(e)}"
-    
-    # Return the response to the template
-    return render_template('index.html', query=query, response=reply)
-
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+        {% if query %}
+            <h3>Response for your query:</h3>
+            <div class="response">
+                <pre>{{ response }}</pre>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
