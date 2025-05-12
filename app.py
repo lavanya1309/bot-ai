@@ -15,39 +15,45 @@ def ask():
     query = request.form['query']
     try:
         headers = {'Content-Type': 'application/json'}
+        
+        # Prepare the prompt for the API
         prompt = f"""
-Answer the following in a step-by-step format with each command on a new line.
-Use:
-Step 1:
-<command>
-Step 2:
-<command>
-Step 3:
-<command>
-Do NOT use extra explanation, bold text, or HTML formatting.
-
-User question: {query}
-"""
+        Answer the following question in a conversational format, giving detailed steps with clear explanations. 
+        Include each step as a command and explain what it does.
+        
+        User question: {query}
+        """
+        
+        # Prepare the data for the API request
         data = {
-            "contents": [ {
+            "contents": [{
                 "parts": [{"text": prompt}]
             }]
         }
+
+        # Make the API request
         response = requests.post(GEMINI_URL, headers=headers, json=data)
         result = response.json()
+
+        # Extract the reply from the response
         reply = result['candidates'][0]['content']['parts'][0]['text']
 
-        # Now, remove any unnecessary HTML tags, and format the response
-        reply = reply.replace('<br>', '\n')  # If there are <br> tags, replace them with newlines
-        reply = reply.strip()  # Clean any leading/trailing spaces
+        # Clean up unwanted HTML tags or line breaks
+        reply = reply.replace('<br>', '\n')  # Replace <br> tags with newline
+        reply = reply.strip()  # Remove leading/trailing whitespace
 
-        # Further sanitize if there's HTML like <p> or <div> that we don't want
+        # Remove any additional HTML tags (like <p>, <div>, etc.)
         reply = reply.replace('<p>', '').replace('</p>', '')
         reply = reply.replace('<div>', '').replace('</div>', '')
+
+        # If the response is too brief or empty, provide a default message
+        if not reply or len(reply.splitlines()) < 3:
+            reply = "⚠️ Sorry, I wasn't able to get a detailed response. Here's a basic guide:\n\nStep 1: Run 'sudo apt update'\nStep 2: Run 'sudo apt install nginx'\nStep 3: Run 'sudo systemctl start nginx'\nStep 4: Run 'sudo systemctl enable nginx'\nStep 5: Run 'sudo systemctl status nginx'"
 
     except Exception as e:
         reply = f"⚠️ Error: {str(e)}"
     
+    # Return the response to the template
     return render_template('index.html', query=query, response=reply)
 
 if __name__ == '__main__':
