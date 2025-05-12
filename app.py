@@ -15,7 +15,17 @@ def ask():
     query = request.form['query']
     try:
         headers = {'Content-Type': 'application/json'}
-        prompt = f"""Explain this in clear simple steps using 'Step 1:', 'Step 2:' format. If there are any commands, just display them on a new line, without backticks or code blocks. Question: {query}"""
+        prompt = f"""
+Answer the following in clear step-by-step format.
+Use:
+Step 1:
+<command>
+Step 2:
+<command>
+Do NOT use any extra explanation or HTML or **bold text** or code blocks.
+Just list steps one after another.
+User question: {query}
+"""
         data = {
             "contents": [{
                 "parts": [{"text": prompt}]
@@ -25,7 +35,7 @@ def ask():
         result = response.json()
         reply = result['candidates'][0]['content']['parts'][0]['text']
 
-        # Format line breaks for HTML display
+        # Convert plain text with \n into HTML <br> for rendering
         reply = reply.replace('\n', '<br>')
 
     except Exception as e:
