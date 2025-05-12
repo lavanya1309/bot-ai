@@ -1,0 +1,70 @@
+name: Deploy to Azure VM
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Write private key to file
+        run: |
+          echo "-----BEGIN RSA PRIVATE KEY-----
+          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
+          -----END RSA PRIVATE KEY-----" > private_key
+          chmod 600 private_key
+
+      - name: Copy code to VM via SCP
+        run: |
+          scp -i private_key -o StrictHostKeyChecking=no -r . soma@20.42.87.123:/opt/bot-ai
+
+      - name: SSH and deploy app
+        run: |
+          ssh -i private_key -o StrictHostKeyChecking=no soma@20.42.87.123 << 'EOF'
+            cd /opt/bot-ai
+            sudo apt update
+            sudo apt install -y python3-pip nodejs npm unzip
+          EOF
