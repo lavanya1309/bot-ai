@@ -1,10 +1,12 @@
 from flask import Flask, render_template, request
-import wikipedia
+import requests
+import os
 
 app = Flask(__name__)
 
-# Set the default Wikipedia language (optional)
-wikipedia.set_lang("en")
+# Replace with your actual Gemini API key
+GEMINI_API_KEY = "AIzaSyCFU2WJ3G2Szis2xdII2krXONqa0pM_iik"
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
 
 @app.route('/')
 def home():
@@ -14,18 +16,18 @@ def home():
 def ask():
     query = request.form['query']
     try:
-        # Fetch the Wikipedia summary for the query
-        response = wikipedia.summary(query, sentences=3)  # Limit the response to 3 sentences
-    except wikipedia.exceptions.DisambiguationError as e:
-        response = f"Your query is too broad. Did you mean: {', '.join(e.options)}?"
-    except wikipedia.exceptions.PageError:
-        response = "Sorry, I couldn't find any information on that topic."
-    except wikipedia.exceptions.HTTPTimeoutError:
-        response = "Timeout error occurred while fetching data from Wikipedia."
+        headers = {'Content-Type': 'application/json'}
+        data = {
+            "contents": [{
+                "parts": [{"text": query}]
+            }]
+        }
+        response = requests.post(GEMINI_URL, headers=headers, json=data)
+        result = response.json()
+        reply = result['candidates'][0]['content']['parts'][0]['text']
     except Exception as e:
-        response = f"⚠️ Something went wrong: {str(e)}. Please try again."
-    
-    return render_template('index.html', query=query, response=response)
+        reply = f"⚠️ Error: {str(e)}"
+    return render_template('index.html', query=query, response=reply)
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
