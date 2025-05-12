@@ -16,11 +16,12 @@ def ask():
     query = request.form['query']
     try:
         headers = {'Content-Type': 'application/json'}
-        
-        # Prepare the prompt for the API
+
+        # Modify the prompt to ask the AI for a more conversational, natural response
         prompt = f"""
-        Answer the following question in a conversational format, giving detailed steps with clear explanations. 
-        Include each step as a command and explain what it does.
+        Answer the following question in a conversational format. Provide relevant and clear information, 
+        but avoid step-by-step instructions unless it's absolutely necessary. If you mention commands or code, 
+        highlight them clearly in the response.
         
         User question: {query}
         """
