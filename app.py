@@ -9,7 +9,7 @@ from pygments.formatters import HtmlFormatter
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
-GEMINI_API_KEY = "AIzaSyCFU2WJ3GzSzis2xdII2krXONqa0pM_iik"
+GEMINI_API_KEY = "AIzaSyBk34r5ePm5BiBLen657Xel_gNSB_kArmA"
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
 
 # Store conversation history
