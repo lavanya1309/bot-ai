@@ -3,26 +3,30 @@ import wikipedia
 
 app = Flask(__name__)
 
+# Set the default Wikipedia language (optional)
+wikipedia.set_lang("en")
+
 @app.route('/')
-def index():
+def home():
     return render_template('index.html')
 
 @app.route('/ask', methods=['POST'])
 def ask():
     query = request.form['query']
     try:
-        # Fetch a summary from Wikipedia for the query
-        summary = wikipedia.summary(query, sentences=3)
-        return render_template('index.html', response=summary, query=query)
+        # Fetch the Wikipedia summary for the query
+        response = wikipedia.summary(query, sentences=3)  # Limit the response to 3 sentences
     except wikipedia.exceptions.DisambiguationError as e:
-        # Handle disambiguation error if Wikipedia returns multiple options
-        return render_template('index.html', response="Sorry, there are multiple results. Please refine your query.", query=query)
+        response = f"Your query is too broad. Did you mean: {', '.join(e.options)}?"
+    except wikipedia.exceptions.PageError:
+        response = "Sorry, I couldn't find any information on that topic."
     except wikipedia.exceptions.HTTPTimeoutError:
-        return render_template('index.html', response="Request to Wikipedia timed out. Please try again.", query=query)
-    except wikipedia.exceptions.RequestError:
-        return render_template('index.html', response="There was an error with the Wikipedia request. Please try again later.", query=query)
+        response = "Timeout error occurred while fetching data from Wikipedia."
     except Exception as e:
-        return render_template('index.html', response="Sorry, something went wrong. Please try again.", query=query)
+        response = f"⚠️ Something went wrong: {str(e)}. Please try again."
+    
+    return render_template('index.html', query=query, response=response)
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+if __name__ == '__main__':
+    # Set the port to 5000
+    app.run(debug=True, port=5000)
