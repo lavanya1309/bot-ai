@@ -16,11 +16,11 @@ def ask():
     try:
         headers = {'Content-Type': 'application/json'}
         
-        # Prepare prompt for the API
+        # Prepare the prompt for the API
         prompt = f"""
         Answer the following question in a conversational format, giving detailed steps with clear explanations. 
         Include each step as a command and explain what it does.
-
+        
         User question: {query}
         """
         
