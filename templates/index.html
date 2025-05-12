@@ -1,142 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Smart AI Chatbot</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #f4f7f9;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    #chat-container {
-      width: 400px;
-      height: 600px;
-      background-color: #ffffff;
-      border-radius: 10px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    #messages {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .message {
-      max-width: 80%;
-      margin-bottom: 10px;
-      padding: 10px 15px;
-      border-radius: 10px;
-      line-height: 1.4;
-      word-wrap: break-word;
-    }
-
-    .user {
-      align-self: flex-end;
-      background-color: #d1e7ff;
-      text-align: right;
-    }
-
-    .bot {
-      align-self: flex-start;
-      background-color: #e2f0d9;
-      text-align: left;
-    }
-
-    #input-area {
-      display: flex;
-      border-top: 1px solid #ddd;
-    }
-
-    #userInput {
-      flex: 1;
-      padding: 15px;
-      border: none;
-      font-size: 16px;
-      outline: none;
-    }
-
-    button {
-      padding: 15px 20px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background-color: #ccc;
-      border-radius: 10px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start.AI - Your AI Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .chat-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            background-color: #fafafa;
+        }
+        .input-box {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .message {
+            padding: 5px;
+            margin: 5px 0;
+        }
+        .user-message {
+            background-color: #dff0d8;
+            text-align: right;
+        }
+        .bot-message {
+            background-color: #f2dede;
+            text-align: left;
+        }
+    </style>
 </head>
 <body>
-  <div id="chat-container">
-    <div id="messages"></div>
-    <div id="input-area">
-      <input type="text" id="userInput" placeholder="Ask me anything..." onkeydown="if(event.key === 'Enter') sendMessage()" />
-      <button onclick="sendMessage()">Send</button>
+
+<div class="container">
+    <h1>Start.AI - Your AI Chatbot</h1>
+    <div class="chat-box" id="chat-box">
+        {% if query %}
+            <div class="message user-message">{{ query }}</div>
+            <div class="message bot-message">{{ response }}</div>
+        {% endif %}
     </div>
-  </div>
+    <form method="POST" action="/ask">
+        <input type="text" name="query" class="input-box" placeholder="Ask something..." required>
+        <button type="submit">Ask</button>
+    </form>
+</div>
 
-  <script>
-    async function sendMessage() {
-      const input = document.getElementById("userInput");
-      const message = input.value.trim();
-      if (!message) return;
-
-      const messagesDiv = document.getElementById("messages");
-
-      // Display user message
-      const userDiv = document.createElement("div");
-      userDiv.className = "message user";
-      userDiv.textContent = message;
-      messagesDiv.appendChild(userDiv);
-
-      input.value = "";
-
-      // Fetch response from server
-      try {
-        const response = await fetch("/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: message })
-        });
-
-        const data = await response.json();
-
-        const botDiv = document.createElement("div");
-        botDiv.className = "message bot";
-        botDiv.textContent = data.reply;
-        messagesDiv.appendChild(botDiv);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      } catch (error) {
-        const errorDiv = document.createElement("div");
-        errorDiv.className = "message bot";
-        errorDiv.textContent = "⚠️ Something went wrong. Please try again.";
-        messagesDiv.appendChild(errorDiv);
-      }
-    }
-  </script>
 </body>
 </html>
