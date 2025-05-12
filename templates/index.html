@@ -48,6 +48,10 @@
         button:hover {
             background-color: #45a049;
         }
+        pre {
+            white-space: pre-wrap;       /* Ensures the text wraps properly */
+            word-wrap: break-word;       /* Breaks long words if necessary */
+        }
     </style>
 </head>
 <body>
@@ -62,7 +66,7 @@
         {% if query %}
             <h3>Response for your query:</h3>
             <div class="response">
-                <pre>{{ response }}</pre>
+                <pre>{{ response|safe }}</pre>
             </div>
         {% endif %}
     </div>
