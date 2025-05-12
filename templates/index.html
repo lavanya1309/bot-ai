@@ -1,72 +1,51 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Start.AI - Your AI Chatbot</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 600px;
-            margin: 50px auto;
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-        .chat-box {
-            border: 1px solid #ccc;
-            padding: 10px;
-            height: 300px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-            background-color: #fafafa;
-            white-space: pre-wrap;  /* Ensure commands are on new lines */
-        }
-        .input-box {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            margin-bottom: 10px;
-        }
-        button {
-            width: 100%;
-            padding: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-    </style>
-</head>
-<body>
+from flask import Flask, render_template, request
+import requests
 
-<div class="container">
-    <h1>Start.AI - Your AI Chatbot</h1>
-    <div class="chat-box" id="chat-box">
-        {% if query %}
-            <p><strong>You:</strong> {{ query }}</p>
-            <p><strong>Bot:</strong></p>
-            <pre>{{ response }}</pre>
-        {% endif %}
-    </div>
-    <form method="POST" action="/ask">
-        <input type="text" name="query" class="input-box" placeholder="Ask something..." required>
-        <button type="submit">Ask</button>
-    </form>
-</div>
+app = Flask(__name__)
 
-</body>
-</html>
+GEMINI_API_KEY = "AIzaSyCFU2WJ3G2Szis2xdII2krXONqa0pM_iik"
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/ask', methods=['POST'])
+def ask():
+    query = request.form['query']
+    try:
+        headers = {'Content-Type': 'application/json'}
+        prompt = f"""
+Answer the following question in a conversational format, giving detailed steps with clear explanations. 
+Include each step as a command and explain what it does.
+
+User question: {query}
+"""
+        data = {
+            "contents": [ {
+                "parts": [{"text": prompt}]
+            }]
+        }
+        response = requests.post(GEMINI_URL, headers=headers, json=data)
+        result = response.json()
+        reply = result['candidates'][0]['content']['parts'][0]['text']
+
+        # Clean up any unwanted HTML tags or line breaks if they appear
+        reply = reply.replace('<br>', '\n')  # Replace <br> tags with newline
+        reply = reply.strip()  # Remove leading/trailing whitespace
+
+        # If there are extra HTML tags like <p>, <div>, etc., remove them
+        reply = reply.replace('<p>', '').replace('</p>', '')
+        reply = reply.replace('<div>', '').replace('</div>', '')
+
+        # If the response isn't as expected (empty or very brief), append a more detailed response
+        if not reply or len(reply.splitlines()) < 3:
+            reply = "⚠️ Sorry, I wasn't able to get a detailed response. Here's a basic guide:\n\nStep 1: Run 'sudo apt update'\nStep 2: Run 'sudo apt install nginx'\nStep 3: Run 'sudo systemctl start nginx'\nStep 4: Run 'sudo systemctl enable nginx'\nStep 5: Run 'sudo systemctl status nginx'"
+
+    except Exception as e:
+        reply = f"⚠️ Error: {str(e)}"
+    
+    return render_template('index.html', query=query, response=reply)
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
