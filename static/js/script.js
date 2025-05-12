@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('queryInput');
     const chatContainer = document.getElementById('chatContainer');
     const submitBtn = document.getElementById('submitBtn');
+    const newChatBtn = document.getElementById('newChatBtn'); // Get the new button
 
     // Handle form submission
     form.addEventListener('submit', async function(e) {
@@ -10,11 +11,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const query = input.value.trim();
         if (!query) return;
 
-        // Add user message to chat
         addMessage(query, 'user');
         input.value = '';
 
-        // Show loading state
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending';
 
@@ -37,55 +36,23 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             addMessage(`Error: ${error.message}`, 'ai', true);
         } finally {
-            // Reset button state
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
-
-            // Scroll to bottom
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
     });
 
-    // Add click handlers for suggestion buttons
-    document.querySelectorAll('.suggestion-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            input.value = this.textContent;
-            input.focus();
-        });
-    });
+    // Handle "New Chat" button click
+    newChatBtn.addEventListener('click', function() {
+        // Clear the displayed chat messages
+        chatContainer.innerHTML = '';
 
-    // Function to add a message to the chat
-    function addMessage(content, sender, isError = false) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${isError ? 'error' : ''}`;
+        // Optionally clear the input field
+        input.value = '';
 
-        if (sender === 'user') {
-            messageDiv.innerHTML = `
-                <div class="user-message">
-                    <div class="avatar"><i class="fas fa-user"></i></div>
-                    <div class="content">${content}</div>
-                </div>
-            `;
-        } else {
-            messageDiv.innerHTML = `
-                <div class="ai-message">
-                    <div class="avatar"><i class="fas fa-robot"></i></div>
-                    <div class="content">${content}</div>
-                </div>
-            `;
-        }
+        // Potentially scroll to the top of the chat container
+        chatContainer.scrollTop = 0;
 
-        chatContainer.appendChild(messageDiv);
-
-        // Highlight any code blocks
-        document.querySelectorAll('pre code').forEach((block) => {
-            hljs.highlightElement(block);
-        });
-
-        // Scroll to the new message
-        messageDiv.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    // Auto-focus input on page load
-    input.focus();
-});
+        // --- Backend Consideration (Optional but Recommended) ---
+        fetch('/new_chat', { method: 'POST' })
+            .then(response => response.
