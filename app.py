@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request
 import requests
+import re
 
 app = Flask(__name__)
 
@@ -45,6 +46,9 @@ def ask():
         # Remove any additional HTML tags (like <p>, <div>, etc.)
         reply = reply.replace('<p>', '').replace('</p>', '')
         reply = reply.replace('<div>', '').replace('</div>', '')
+
+        # Detect commands and highlight them with bold markers
+        reply = re.sub(r'(sudo|apt|systemctl|curl|git|mkdir|\b\d+\b)', r'**\1**', reply)
 
         # If the response is too brief or empty, provide a default message
         if not reply or len(reply.splitlines()) < 3:
