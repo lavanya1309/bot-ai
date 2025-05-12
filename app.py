@@ -69,6 +69,7 @@ def ask():
         response = requests.post(GROQ_URL, headers=headers, json=data)
         response.raise_for_status()
         result = response.json()
+        print(f"Groq Response: {result}")  # Debugging
 
         reply = result['choices'][0]['message']['content']
 
@@ -77,13 +78,18 @@ def ask():
 
         # Format the response
         formatted_reply = format_code_blocks(markdown.markdown(reply))
+        print(f"Flask Response: {jsonify({'response': formatted_reply})}") # Debugging
 
-        return jsonify({'response': formatted_reply})
+        return jsonify({'response': formatted_reply, 'is_error': False}) # Ensure is_error is always included
 
     except requests.exceptions.RequestException as e:
-        return jsonify({'error': f"API request failed: {str(e)}"})
+        error_message = f"API request failed: {str(e)}"
+        print(f"Flask Error (RequestException): {error_message}") # Debugging
+        return jsonify({'error': error_message, 'is_error': True})
     except Exception as e:
-        return jsonify({'error': f"An error occurred: {str(e)}"})
+        error_message = f"An error occurred: {str(e)}"
+        print(f"Flask Error (General): {error_message}") # Debugging
+        return jsonify({'error': error_message, 'is_error': True})
 
 @app.route('/new_chat', methods=['POST'])
 def new_chat():
