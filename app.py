@@ -9,8 +9,10 @@ from pygments.formatters import HtmlFormatter
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
-GEMINI_API_KEY = "AIzaSyBk34r5ePm5BiBLen657Xel_gNSB_kArmA"
-GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
+# Free AI API configuration (OpenRouter)
+OPENROUTER_API_KEY = "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"  # Replace with your key
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+MODEL = "gryphe/mythomax-l2-13b"  # Free model (or try 'meta-llama/llama-3-70b-instruct')
 
 # Store conversation history
 conversation_history = []
@@ -43,49 +45,31 @@ def ask():
         return jsonify({'error': 'Please enter a question'})
     
     try:
-        # Include conversation history in the prompt
-        history_context = "\n".join([f"User: {item['query']}\nAI: {item['response']}" 
-                                   for item in conversation_history[-3:]])
-        
-        prompt = {
-            "contents": [{
-                "parts": [{
-                    "text": f"{history_context}\n\nUser: {query}\nAI:"
-                }]
-            }],
-            "generationConfig": {
-                "temperature": 0.7,
-                "topP": 0.9,
-                "maxOutputTokens": 2000
-            },
-            "safetySettings": [
-                {
-                    "category": "HARM_CATEGORY_HARASSMENT",
-                    "threshold": "BLOCK_ONLY_HIGH"
-                },
-                {
-                    "category": "HARM_CATEGORY_HATE_SPEECH",
-                    "threshold": "BLOCK_ONLY_HIGH"
-                },
-                {
-                    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                    "threshold": "BLOCK_ONLY_HIGH"
-                },
-                {
-                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-                    "threshold": "BLOCK_ONLY_HIGH"
-                }
-            ]
+        # Prepare messages with conversation history
+        messages = [
+            {"role": "system", "content": "You are a helpful AI assistant."},
+            *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']} 
+              for i, msg in enumerate(conversation_history[-3:])],
+            {"role": "user", "content": query}
+        ]
+
+        data = {
+            "model": MODEL,
+            "messages": messages,
+            "temperature": 0.7
         }
 
-        response = requests.post(GEMINI_URL, headers={'Content-Type': 'application/json'}, json=prompt)
+        headers = {
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "HTTP-Referer": "http://localhost:5000",  # Your website URL
+            "X-Title": "AI Assistant"  # Your app name
+        }
+
+        response = requests.post(OPENROUTER_URL, headers=headers, json=data)
         response.raise_for_status()
         result = response.json()
 
-        if 'candidates' not in result or not result['candidates']:
-            raise ValueError("No valid response from the AI model")
-
-        reply = result['candidates'][0]['content']['parts'][0]['text']
+        reply = result['choices'][0]['message']['content']
         
         # Format the response
         reply = format_code_blocks(reply)
@@ -112,8 +96,6 @@ def ask():
                 error_msg += f"\nDetails: {error_details.get('error', {}).get('message', 'No details')}"
             except:
                 error_msg += f"\nStatus: {e.response.status_code}"
-    except ValueError as e:
-        error_msg = f"API error: {str(e)}"
     except Exception as e:
         error_msg = f"Unexpected error: {str(e)}"
     
