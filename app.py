@@ -1,26 +1,28 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request
 import wikipedia
 
 app = Flask(__name__)
 
-@app.route("/")
+@app.route('/')
 def index():
-    return render_template("index.html")
+    return render_template('index.html')
 
-@app.route("/chat", methods=["POST"])
-def chat():
-    user_msg = request.get_json().get("message")
+@app.route('/ask', methods=['POST'])
+def ask():
+    query = request.form['query']
     try:
-        # Use Wikipedia to fetch relevant information
-        result = wikipedia.summary(user_msg, sentences=2)
+        # Fetch a summary from Wikipedia for the query
+        summary = wikipedia.summary(query, sentences=3)
+        return render_template('index.html', response=summary, query=query)
     except wikipedia.exceptions.DisambiguationError as e:
-        result = f"Multiple results found: {e.options[:3]}"
-    except wikipedia.exceptions.PageError:
-        result = "Sorry, I couldn't find any information on that topic."
+        # Handle disambiguation error if Wikipedia returns multiple options
+        return render_template('index.html', response="Sorry, there are multiple results. Please refine your query.", query=query)
+    except wikipedia.exceptions.HTTPTimeoutError:
+        return render_template('index.html', response="Request to Wikipedia timed out. Please try again.", query=query)
+    except wikipedia.exceptions.RequestError:
+        return render_template('index.html', response="There was an error with the Wikipedia request. Please try again later.", query=query)
     except Exception as e:
-        result = f"An error occurred: {str(e)}"
-
-    return jsonify({"reply": result})
+        return render_template('index.html', response="Sorry, something went wrong. Please try again.", query=query)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
