@@ -49,7 +49,8 @@ def ask():
 
     try:
         messages = [
-            {"role": "system", "content": "You are a helpful AI assistant."},
+            # MODIFIED SYSTEM MESSAGE:
+            {"role": "system", "content": "You are a helpful AI assistant. When providing code, always enclose it in markdown code blocks (using ```). After the code block, provide a clear and concise explanation of the code."},
             *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
               for i, msg in enumerate(conversation_history[-3:])],
             {"role": "user", "content": query}
