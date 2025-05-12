@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
 GEMINI_API_KEY = "AIzaSyCFU2WJ3GzSzis2xdII2krXONqa0pM_iik"
-GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
 
 # Store conversation history
 conversation_history = []
@@ -47,31 +47,38 @@ def ask():
         history_context = "\n".join([f"User: {item['query']}\nAI: {item['response']}" 
                                    for item in conversation_history[-3:]])
         
-        prompt = f"""
-        You are an AI assistant similar to DeepSeek. Provide detailed, well-structured answers with:
-        - Clear explanations
-        - Proper formatting (headings, lists, code blocks)
-        - Examples when applicable
-        - Error solutions if the user mentions an error
-        
-        Previous conversation:
-        {history_context}
-        
-        New question: {query}
-        """
-        
-        data = {
+        prompt = {
             "contents": [{
-                "parts": [{"text": prompt}]
+                "parts": [{
+                    "text": f"{history_context}\n\nUser: {query}\nAI:"
+                }]
             }],
             "generationConfig": {
                 "temperature": 0.7,
                 "topP": 0.9,
                 "maxOutputTokens": 2000
-            }
+            },
+            "safetySettings": [
+                {
+                    "category": "HARM_CATEGORY_HARASSMENT",
+                    "threshold": "BLOCK_ONLY_HIGH"
+                },
+                {
+                    "category": "HARM_CATEGORY_HATE_SPEECH",
+                    "threshold": "BLOCK_ONLY_HIGH"
+                },
+                {
+                    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    "threshold": "BLOCK_ONLY_HIGH"
+                },
+                {
+                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                    "threshold": "BLOCK_ONLY_HIGH"
+                }
+            ]
         }
 
-        response = requests.post(GEMINI_URL, headers={'Content-Type': 'application/json'}, json=data)
+        response = requests.post(GEMINI_URL, headers={'Content-Type': 'application/json'}, json=prompt)
         response.raise_for_status()
         result = response.json()
 
@@ -99,6 +106,12 @@ def ask():
 
     except requests.exceptions.RequestException as e:
         error_msg = f"Network error: {str(e)}"
+        if hasattr(e, 'response') and e.response:
+            try:
+                error_details = e.response.json()
+                error_msg += f"\nDetails: {error_details.get('error', {}).get('message', 'No details')}"
+            except:
+                error_msg += f"\nStatus: {e.response.status_code}"
     except ValueError as e:
         error_msg = f"API error: {str(e)}"
     except Exception as e:
