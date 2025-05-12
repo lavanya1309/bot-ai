@@ -16,12 +16,11 @@
         </header>
 
         <div class="chat-container" id="chatContainer">
-            <!-- Messages will appear here -->
             {% for item in conversation %}
                 <div class="message {% if item.is_error %}error{% endif %}">
                     <div class="user-message">
                         <div class="avatar"><i class="fas fa-user"></i></div>
-                        <div class="content">{{ item.query }}</div>
+                        <div class="content">{{ item.query|safe }}</div>
                     </div>
                     <div class="ai-message">
                         <div class="avatar"><i class="fas fa-robot"></i></div>
