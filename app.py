@@ -49,7 +49,6 @@ def ask():
 
     try:
         messages = [
-            # MODIFIED SYSTEM MESSAGE:
             {"role": "system", "content": "You are a helpful AI assistant. When providing code, always enclose it in markdown code blocks (using ```). After the code block, provide a clear and concise explanation of the code."},
             *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
               for i, msg in enumerate(conversation_history[-3:])],
@@ -85,6 +84,11 @@ def ask():
         return jsonify({'error': f"API request failed: {str(e)}"})
     except Exception as e:
         return jsonify({'error': f"An error occurred: {str(e)}"})
+
+@app.route('/new_chat', methods=['POST'])
+def new_chat():
+    conversation_history.clear()
+    return jsonify({'success': True})
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
