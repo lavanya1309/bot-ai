@@ -178,10 +178,10 @@ body {
     font-size: 18px;
 }
 
-.ai-message .avatar {
-    background-color: #e3f2fd;
-    color: var(--secondary-color);
-}
+#.ai-message .avatar {
+#    background-color: #e3f2fd;
+#    color: var(--secondary-color);
+#}
 
 .content {
     flex: 1;
