@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DeepSeek-like AI Assistant</title>
     <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css)">
-    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css](https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css)">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
 </head>
 <body>
     <div class="app-container">
@@ -63,62 +63,11 @@
         </div>
     </div>
 
-    <script src="[https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js](https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js)"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
     <script src="/static/js/script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const previousChatsList = document.getElementById('previousChatsList');
-            const chatContainer = document.getElementById('chatContainer');
-
-            if (previousChatsList) {
-                previousChatsList.addEventListener('click', async function(event) {
-                    const listItem = event.target.closest('.previous-chat-item');
-                    if (listItem) {
-                        const filename = listItem.dataset.filename;
-                        try {
-                            const response = await fetch('/load_chat', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/x-www-form-urlencoded',
-                                },
-                                body: `filename=${encodeURIComponent(filename)}`
-                            });
-                            if (!response.ok) {
-                                console.error('Error loading chat:', response.status, await response.text());
-                                return;
-                            }
-                            const data = await response.json();
-                            if (data.success) {
-                                chatContainer.innerHTML = ''; // Clear current chat
-                                data.conversation.forEach(item => {
-                                    const messageDiv = document.createElement('div');
-                                    messageDiv.className = 'message';
-                                    messageDiv.innerHTML = `
-                                        <div class="user-message">
-                                            <div class="avatar"><i class="fas fa-user"></i></div>
-                                            <div class="content">${item.query}</div>
-                                        </div>
-                                        <div class="ai-message">
-                                            <div class="avatar"><i class="fas fa-robot"></i></div>
-                                            <div class="content">${item.response}</div>
-                                        </div>
-                                    `;
-                                    chatContainer.appendChild(messageDiv);
-                                });
-                                // Re-highlight code blocks after loading
-                                document.querySelectorAll('pre code').forEach((block) => {
-                                    hljs.highlightElement(block);
-                                });
-                                chatContainer.scrollTop = chatContainer.scrollHeight;
-                            } else {
-                                console.error('Error loading chat:', data.error);
-                            }
-                        } catch (error) {
-                            console.error('Fetch error loading chat:', error);
-                        }
-                    }
-                });
-            }
+            hljs.highlightAll();
         });
     </script>
 </body>
