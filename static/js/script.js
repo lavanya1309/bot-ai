@@ -1,121 +1,122 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('queryForm');
-    const input = document.getElementById('queryInput');
+    const newChatBtn = document.getElementById('newChatBtn');
     const chatContainer = document.getElementById('chatContainer');
+    const queryForm = document.getElementById('queryForm');
+    const queryInput = document.getElementById('queryInput');
     const submitBtn = document.getElementById('submitBtn');
-    const newChatBtn = document.getElementById('newChatBtn'); // Get the new button
+    const previousChatsList = document.getElementById('previousChatsList');
 
-    // Function to add a message to the chat
-    function addMessage(content, sender, isError = false) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${isError ? 'error' : ''}`;
-
-        let messageContent = '';
-        if (sender === 'user') {
-            messageContent = `
-                <div class="user-message">
-                    <div class="avatar"><i class="fas fa-user"></i></div>
-                    <div class="content">${content}</div>
-                </div>
-            `;
-        } else {
-            messageContent = `
-                <div class="ai-message">
-                    <div class="avatar"><i class="fas fa-robot"></i></div>
-                    <div class="content">${content}</div>
-                </div>
-            `;
-        }
-        messageDiv.innerHTML = messageContent;
-        chatContainer.appendChild(messageDiv);
-
-        // Highlight any code blocks
-        document.querySelectorAll('pre code').forEach((block) => {
-            hljs.highlightElement(block);
-        });
-
-        // Scroll to the new message
-        messageDiv.scrollIntoView({ behavior: 'smooth' });
+    function clearChatDisplay() {
+        chatContainer.innerHTML = '';
     }
 
-    // Handle form submission
-    form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const query = input.value.trim();
-        if (!query) return;
+    async function updatePreviousChats() {
+        try {
+            const response = await fetch('/get_last_day_chats');
+            if (!response.ok) {
+                console.error('Error fetching previous chats:', response.status);
+                return;
+            }
+            const chats = await response.json();
+            previousChatsList.innerHTML = ''; // Clear the current list
+            if (chats.length > 0) {
+                chats.forEach(chat => {
+                    const li = document.createElement('li');
+                    li.dataset.filename = chat.filename;
+                    li.className = 'previous-chat-item';
+                    li.innerHTML = `<span class="math-inline">\{chat\.summary\} <span class\="chat\-time"\>\(</span>{chat.timestamp})</span>`;
+                    previousChatsList.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.textContent = 'No recent chats';
+                previousChatsList.appendChild(li);
+            }
+        } catch (error) {
+            console.error('Error updating previous chats:', error);
+        }
+    }
 
-        addMessage(query, 'user');
-        input.value = '';
-
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending';
+    newChatBtn.addEventListener('click', async function() {
+        clearChatDisplay();
+        queryInput.value = '';
+        queryInput.focus();
 
         try {
-            const response = await fetch('/ask', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `query=${encodeURIComponent(query)}`
-            });
-
+            const response = await fetch('/new_chat', { method: 'POST' });
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Fetch error:', response.status, errorText);
-                addMessage(`Error: Failed to fetch (${response.status} - ${errorText})`, 'ai', true);
-                return;
+                console.error('Error starting new chat:', response.status);
             }
-
             const data = await response.json();
-            console.log('Response Data:', data); // Debugging
-
-            if (data.error) {
-                console.error('Backend error:', data.error);
-                addMessage(`Error: ${data.error}`, 'ai', true);
-                return;
+            if (data.success) {
+                await updatePreviousChats(); // Fetch and update the previous chats list
             }
-
-            if (data && data.response) {
-                addMessage(data.response, 'ai', data.is_error);
-            } else {
-                console.error('Invalid response format:', data);
-                addMessage('Error: Invalid response from AI', 'ai', true);
-            }
-
         } catch (error) {
-            console.error('Fetch error:', error);
-            addMessage(`Error: ${error.message}`, 'ai', true);
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            console.error('Error communicating new chat to backend:', error);
         }
     });
 
-    // Handle "New Chat" button click
-    newChatBtn.addEventListener('click', function() {
-        chatContainer.innerHTML = '';
-        input.value = '';
-        chatContainer.scrollTop = 0;
+    queryForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const query = queryInput.value.trim();
+        if (query) {
+            appendMessage('user', query);
+            queryInput.value = '';
+            submitBtn.disabled = true;
+            queryInput.disabled = true;
+            chatContainer.scrollTop = chatContainer.scrollHeight;
 
-        fetch('/new_chat', { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                console.log('New chat acknowledged by backend:', data);
-            })
-            .catch(error => {
-                console.error('Error clearing backend chat:', error);
-            });
+            try {
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `query=${encodeURIComponent(query)}`
+                });
+
+                if (!response.ok) {
+                    console.error('API error:', response.status);
+                    appendMessage('ai', 'Error communicating with the AI.');
+                    return;
+                }
+
+                const data = await response.json();
+                if (data.is_error) {
+                    appendMessage('ai', data.error);
+                } else {
+                    appendMessage('ai', data.response);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                appendMessage('ai', 'An error occurred while processing your request.');
+            } finally {
+                submitBtn.disabled = false;
+                queryInput.disabled = false;
+                queryInput.focus();
+                // Re-highlight code blocks after AI response
+                document.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
     });
 
-    // Add click handlers for suggestion buttons
-    document.querySelectorAll('.suggestion-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            input.value = this.textContent;
-            input.focus();
-        });
-    });
-
-    // Auto-focus input on page load
-    input.focus();
-});
+    function appendMessage(sender, message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message';
+        if (sender === 'user') {
+            messageDiv.innerHTML = `
+                <div class="user-message">
+                    <div class="avatar"><i class="fas fa-user"></i></div>
+                    <div class="content">${message}</div>
+                </div>
+            `;
+        } else if (sender === 'ai') {
+            messageDiv.innerHTML = `
+                <div class="ai-message">
+                    <div class="avatar"><i class="fas fa-robot"></i></div>
+                    <div class="content">${message}</div>
+                </div>
+            `;
