@@ -162,7 +162,7 @@ body {
     padding-top: 5px;
     padding-left: 15px; /* Increased left padding to avoid overlap */
     border-left: 4px solid var(--primary-color);
-    margin-left: -4px; /* Shift the content (and border) to the left */
+    margin-left: -6px; /* Shift the content (and border) to the left */
 }
 
 .avatar {
