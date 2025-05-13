@@ -1,249 +1,312 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const newChatBtn = document.getElementById('newChatBtn');
-    const chatContainer = document.getElementById('chatContainer');
-    const queryForm = document.getElementById('queryForm');
-    const queryInput = document.getElementById('queryInput');
-    const submitBtn = document.getElementById('submitBtn');
-    const previousChatsList = document.getElementById('previousChatsList');
+:root {
+    --primary-color: #4361ee;
+    --secondary-color: #3a0ca3;
+    --text-color: #333;
+    --light-gray: #f5f5f5;
+    --dark-gray: #666;
+    --error-color: #e63946;
+    --success-color: #2a9d8f;
+    --new-chat-hover: #3a0ca3;
+    --chat-bg: #f0f8ff;
+}
 
-    function clearChatDisplay() {
-        chatContainer.innerHTML = '';
-    }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-    async function updatePreviousChats() {
-        try {
-            const response = await fetch('/get_last_day_chats');
-            if (!response.ok) {
-                console.error('Error fetching previous chats:', response.status);
-                return;
-            }
-            const chats = await response.json();
-            previousChatsList.innerHTML = ''; // Clear the current list
-            if (chats.length > 0) {
-                chats.forEach(chat => {
-                    const li = document.createElement('li');
-                    li.dataset.filename = chat.filename;
-                    li.className = 'previous-chat-item';
-                    li.innerHTML = `${chat.summary} <span class="chat-time">(${chat.timestamp})</span>
-                                    <button class="delete-chat-btn" data-filename="${chat.filename}">
-                                        <i class="fas fa-trash-alt"></i> Delete
-                                    </button>`;
-                    previousChatsList.appendChild(li);
-                });
-            } else {
-                const li = document.createElement('li');
-                li.textContent = 'No recent chats';
-                previousChatsList.appendChild(li);
-            }
-        } catch (error) {
-            console.error('Error updating previous chats:', error);
-        }
-    }
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: #f9f9f9;
+    height: 100vh;
+    margin: 0;
+}
 
-    newChatBtn.addEventListener('click', async function() {
-        clearChatDisplay();
-        queryInput.value = '';
-        queryInput.focus();
+.app-container {
+    display: flex;
+    height: 100%;
+}
 
-        try {
-            const response = await fetch('/new_chat', { method: 'POST' });
-            if (!response.ok) {
-                console.error('Error starting new chat:', response.status);
-            }
-            const data = await response.json();
-            if (data.success) {
-                await updatePreviousChats(); // Fetch and update the previous chats list
-            }
-        } catch (error) {
-            console.error('Error communicating new chat to backend:', error);
-        }
-    });
+.left-sidebar {
+    width: 250px;
+    background-color: var(--light-gray);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
 
-    queryForm.addEventListener('submit', async function(event) {
-        event.preventDefault();
-        const query = queryInput.value.trim();
-        if (query) {
-            appendMessage('user', query);
-            queryInput.value = '';
-            submitBtn.disabled = true;
-            queryInput.disabled = true;
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+.app-header-left {
+    text-align: left;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+}
 
-            try {
-                const response = await fetch('/ask', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `query=${encodeURIComponent(query)}`
-                });
+.app-header-left h1 {
+    color: var(--primary-color);
+    margin-bottom: 5px;
+    font-size: 1.5rem;
+}
 
-                if (!response.ok) {
-                    console.error('API error:', response.status);
-                    appendMessage('ai', 'Error communicating with the AI.');
-                    return;
-                }
+.app-header-left .subtitle {
+    color: var(--dark-gray);
+    font-size: 0.9rem;
+}
 
-                const data = await response.json();
-                if (data.is_error) {
-                    appendMessage('ai', data.error);
-                } else {
-                    appendMessage('ai', data.response);
-                }
-            } catch (error) {
-                console.error('Fetch error:', error);
-                appendMessage('ai', 'An error occurred while processing your request.');
-            } finally {
-                submitBtn.disabled = false;
-                queryInput.disabled = false;
-                queryInput.focus();
-                document.querySelectorAll('pre code').forEach((block) => {
-                    hljs.highlightElement(block);
-                });
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-        }
-    });
+.new-chat-button {
+    background-color: transparent;
+    color: var(--text-color);
+    border: 1px solid var(--dark-gray);
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-bottom: 15px;
+    transition: background-color 0.3s, color 0.3s;
+    align-self: flex-start;
+    width: 100%;
+    text-align: left;
+}
 
-    function appendMessage(sender, message) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message';
-        let contentDiv;
-        if (sender === 'user') {
-            messageDiv.innerHTML = `
-                <div class="user-message">
-                    <div class="avatar"><i class="fas fa-user"></i></div>
-                    <div class="content">${message}</div>
-                </div>
-            `;
-        } else if (sender === 'ai') {
-            let formattedMessage = message;
-            // Find all code blocks and add a copy button
-            formattedMessage = formattedMessage.replace(/<div class="code-block"><pre><code class="([^"]*)">([\s\S]*?)<\/code><\/pre><\/div>/g, (match, language, code) => {
-                const escapedCode = code.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-                return `
-                    <div class="code-block">
-                        <pre><code class="${language}">${code}</code></pre>
-                        <button class="copy-button" data-code="${encodeURIComponent(escapedCode)}"><i class="fas fa-copy"></i> Copy</button>
-                    </div>
-                `;
-            });
-            messageDiv.innerHTML = `
-                <div class="ai-message">
-                    <div class="avatar"><i class="fas fa-robot"></i></div>
-                    <div class="content">${formattedMessage}</div>
-                </div>
-            `;
-        }
-        chatContainer.appendChild(messageDiv);
-        // After appending the message, attach event listeners to the new copy buttons
-        attachCopyEventListeners();
-    }
+.new-chat-button i {
+    margin-right: 10px;
+}
 
-    function attachCopyEventListeners() {
-        const copyButtons = document.querySelectorAll('.copy-button');
-        copyButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const code = decodeURIComponent(this.dataset.code);
-                navigator.clipboard.writeText(code)
-                    .then(() => {
-                        // Optional: Provide visual feedback (e.g., change button text briefly)
-                        this.textContent = 'Copied!';
-                        setTimeout(() => {
-                            this.innerHTML = '<i class="fas fa-copy"></i> Copy';
-                        }, 1500);
-                    })
-                    .catch(err => {
-                        console.error('Failed to copy text: ', err);
-                        this.textContent = 'Error';
-                        setTimeout(() => {
-                            this.innerHTML = '<i class="fas fa-copy"></i> Copy';
-                        }, 1500);
-                    });
-            });
-        });
-    }
+.new-chat-button:hover {
+    background-color: var(--new-chat-hover);
+    color: white;
+    border-color: var(--new-chat-hover);
+}
 
-    if (previousChatsList) {
-        previousChatsList.addEventListener('click', async function(event) {
-            const loadItem = event.target.closest('.previous-chat-item');
-            const deleteButton = event.target.closest('.delete-chat-btn');
+.previous-chats-container {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    border: 1px solid #eee;
+    width: 100%;
+}
 
-            if (deleteButton) {
-                const filenameToDelete = deleteButton.dataset.filename;
-                if (confirm(`Are you sure you want to delete the chat: ${filenameToDelete}?`)) {
-                    try {
-                        const response = await fetch('/delete_chat', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                            },
-                            body: `filename=${encodeURIComponent(filenameToDelete)}`
-                        });
-                        if (!response.ok) {
-                            console.error('Error deleting chat:', response.status, await response.text());
-                            alert('Error deleting chat.');
-                            return;
-                        }
-                        const data = await response.json();
-                        if (data.success) {
-                            await updatePreviousChats(); // Reload the previous chats list
-                            clearChatDisplay(); // Optionally clear the main chat area
-                        } else {
-                            console.error('Error deleting chat:', data.error);
-                            alert(`Error deleting chat: ${data.error}`);
-                        }
-                    } catch (error) {
-                        console.error('Fetch error deleting chat:', error);
-                        alert('Failed to delete chat.');
-                    }
-                }
-            } else if (loadItem) {
-                const filenameToLoad = loadItem.dataset.filename;
-                try {
-                    const response = await fetch('/load_chat', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `filename=${encodeURIComponent(filenameToLoad)}`
-                    });
-                    if (!response.ok) {
-                        console.error('Error loading chat:', response.status, await response.text());
-                        return;
-                    }
-                    const data = await response.json();
-                    if (data.success) {
-                        chatContainer.innerHTML = '';
-                        data.conversation.forEach(item => {
-                            const messageDiv = document.createElement('div');
-                            messageDiv.className = 'message';
-                            messageDiv.innerHTML = `
-                                <div class="user-message">
-                                    <div class="avatar"><i class="fas fa-user"></i></div>
-                                    <div class="content">${item.query}</div>
-                                </div>
-                                <div class="ai-message">
-                                    <div class="avatar"><i class="fas fa-robot"></i></div>
-                                    <div class="content">${item.response}</div>
-                                </div>
-                            `;
-                            chatContainer.appendChild(messageDiv);
-                        });
-                        document.querySelectorAll('pre code').forEach((block) => {
-                            hljs.highlightElement(block);
-                        });
-                        chatContainer.scrollTop = chatContainer.scrollHeight;
-                    } else {
-                        console.error('Error loading chat:', data.error);
-                    }
-                } catch (error) {
-                    console.error('Fetch error loading chat:', error);
-                }
-            }
-        });
-    }
+.previous-chats-container h3 {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    color: var(--dark-gray);
+}
 
-    // Initial load of previous chats
-    updatePreviousChats();
-});
+.previous-chats-container ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.previous-chats-container li {
+    padding: 8px 10px;
+    margin-bottom: 5px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 0.9rem;
+    display: flex; /* To align text and button */
+    justify-content: space-between;
+    align-items: center;
+}
+
+.previous-chats-container li:hover {
+    background-color: #eee;
+}
+
+.previous-chats-container .chat-time {
+    font-size: 0.8rem;
+    color: var(--dark-gray);
+    margin-left: 10px;
+}
+
+.delete-chat-btn {
+    background-color: transparent;
+    color: var(--error-color);
+    border: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+    padding: 5px;
+    margin-left: 10px;
+}
+
+.delete-chat-btn:hover {
+    opacity: 1;
+}
+
+.delete-chat-btn i {
+    margin-right: 5px;
+}
+
+.chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--chat-bg);
+    padding: 20px;
+    height: 100%;
+}
+
+.chat-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+}
+
+.message {
+    margin-bottom: 25px;
+}
+
+.message.error .ai-message {
+    border-left: 4px solid var(--error-color);
+}
+
+.user-message, .ai-message {
+    display: flex;
+    margin-bottom: 10px;
+    gap: 15px;
+    padding-left: 5px;
+}
+
+.ai-message .content {
+    flex: 1;
+    padding-top: 5px;
+    padding-left: 15px;
+    border-left: 4px solid var(--primary-color);
+    margin-left: -6px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--light-gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--primary-color);
+    font-size: 18px;
+}
+
+.ai-message .avatar {
+    background-color: #e3f2fd;
+    color: var(--secondary-color);
+}
+
+.content {
+    flex: 1;
+    padding-top: 5px;
+}
+
+.query-form {
+    margin-top: auto;
+    width: 100%;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+input[type="text"] {
+    flex: 1;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 30px;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+}
+
+button {
+    padding: 12px 20px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+button:hover {
+    background-color: var(--secondary-color);
+}
+
+.suggestions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+    color: var(--dark-gray);
+    margin-top: 10px;
+}
+
+.suggestion-btn {
+    padding: 8px 12px;
+    background-color: var(--light-gray);
+    color: var(--text-color);
+    font-size: 0.8rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.suggestion-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.code-block {
+    position: relative; /* To position the copy button */
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f6f8fa;
+    overflow: auto; /* Ensure scrollbar if code is long */
+}
+
+.code-block pre {
+    margin: 10px;
+    padding: 0;
+}
+
+.copy-button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: #eee;
+    color: var(--text-color);
+    border: none;
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+}
+
+.copy-button:hover {
+    opacity: 1;
+    background-color: #ddd;
+}
