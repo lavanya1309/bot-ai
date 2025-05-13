@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
 # Groq AI API configuration
-GROQ_API_KEY = "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"  # Replace with your actual Groq API key
+GROQ_API_KEY = "gsk_your_groq_api_key_here"  # Replace with your actual Groq API key
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL = "llama3-70b-8192"
 
@@ -201,6 +201,19 @@ def load_chat():
         return jsonify({'error': 'Chat history not found'}), 404
     except Exception as e:
         return jsonify({'error': f'Error loading chat: {str(e)}'}), 500
+
+@app.route('/delete_chat', methods=['POST'])
+def delete_chat():
+    filename = request.form['filename']
+    filepath = os.path.join(CHAT_HISTORY_DIR, filename)
+    try:
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Chat file not found.'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error deleting chat: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
