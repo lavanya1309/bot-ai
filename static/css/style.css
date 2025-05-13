@@ -6,8 +6,8 @@
     --dark-gray: #666;
     --error-color: #e63946;
     --success-color: #2a9d8f;
-    --new-chat-hover: #3a0ca3; /* Dark blue hover color */
-    --chat-bg: #f0f8ff; /* Light blue background for chat area */
+    --new-chat-hover: #3a0ca3;
+    --chat-bg: #f0f8ff;
 }
 
 * {
@@ -21,22 +21,22 @@ body {
     line-height: 1.6;
     color: var(--text-color);
     background-color: #f9f9f9;
-    height: 100vh; /* Ensure body takes full viewport height */
-    margin: 0; /* Reset body margin */
+    height: 100vh;
+    margin: 0;
 }
 
 .app-container {
     display: flex;
-    height: 100%; /* Make app container take full height */
+    height: 100%;
 }
 
 .left-sidebar {
-    width: 250px; /* Adjust width as needed */
+    width: 250px;
     background-color: var(--light-gray);
     padding: 20px;
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* Align items to the left */
+    align-items: flex-start;
 }
 
 .app-header-left {
@@ -69,7 +69,7 @@ body {
     margin-bottom: 15px;
     transition: background-color 0.3s, color 0.3s;
     align-self: flex-start;
-    width: 100%; /* Make button take full width of sidebar */
+    width: 100%;
     text-align: left;
 }
 
@@ -124,12 +124,12 @@ body {
 }
 
 .chat-area {
-    flex: 1; /* Takes up the remaining width */
+    flex: 1;
     display: flex;
     flex-direction: column;
     background-color: var(--chat-bg);
     padding: 20px;
-    height: 100%; /* Make chat area take full height */
+    height: 100%;
 }
 
 .chat-container {
@@ -154,15 +154,15 @@ body {
     display: flex;
     margin-bottom: 10px;
     gap: 15px;
-    padding-left: 5px; /* Add some padding to the left of the whole AI message */
+    padding-left: 5px;
 }
 
 .ai-message .content {
     flex: 1;
     padding-top: 5px;
-    padding-left: 15px; /* Increased left padding to avoid overlap */
+    padding-left: 15px;
     border-left: 4px solid var(--primary-color);
-    margin-left: -8px; /* Increased negative margin to move further left */
+    margin-left: -6px;
 }
 
 .avatar {
@@ -254,10 +254,9 @@ button:hover {
     background-color: #e0e0e0;
 }
 
-/* Responsive design */
 @media (max-width: 768px) {
     .app-container {
-        flex-direction: column; /* Stack sidebar and chat area on smaller screens */
+        flex-direction: column;
     }
 
     .left-sidebar {
@@ -267,8 +266,6 @@ button:hover {
 
     .chat-area {
         width: 100%;
-        height: auto; /* Adjust height for smaller screens */
+        height: auto;
     }
-
-    /* ... other responsive styles ... */
 }
