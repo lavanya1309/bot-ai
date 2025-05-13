@@ -160,7 +160,7 @@ body {
 .ai-message .content {
     flex: 1;
     padding-top: 5px;
-    padding-left: 10px; /* Keep some padding for text */
+    padding-left: 15px; /* Increased left padding to avoid overlap */
     border-left: 4px solid var(--primary-color);
     margin-left: -4px; /* Shift the content (and border) to the left */
 }
