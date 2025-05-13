@@ -6,14 +6,14 @@ from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
 from datetime import datetime, timedelta
-import json  # For saving/loading chat history
+import json
 import os
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
 # Groq AI API configuration
-GROQ_API_KEY = "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"  # Get at console.groq.com
+GROQ_API_KEY = "gsk_your_groq_api_key_here"  # Replace with your actual Groq API key
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL = "llama3-70b-8192"
 
@@ -42,16 +42,15 @@ def get_last_day_chats():
     last_day_chats = []
     for filename in sorted(chat_files, reverse=True):
         try:
-            timestamp_str = filename[5:-5]  # Extract timestamp from filename
+            timestamp_str = filename[5:-5]
             chat_time = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
             if chat_time >= one_day_ago:
-                # Load a summary (e.g., the first query) for display
                 history = load_chat_history(filename)
                 if history:
                     summary = history[0]['query'][:50] + "..." if len(history[0]['query']) > 50 else history[0]['query']
                     last_day_chats.append({'filename': filename, 'summary': summary, 'timestamp': chat_time.strftime("%H:%M")})
             else:
-                break  # Since files are sorted by time, we can stop
+                break
         except ValueError:
             continue
     return last_day_chats
@@ -90,7 +89,7 @@ def index():
 def ask():
     query = request.form['query']
     if not query.strip():
-        return jsonify({'error': 'Please enter a question'})
+        return jsonify({'error': 'Please enter a question', 'is_error': True})
 
     try:
         messages = [
@@ -114,26 +113,24 @@ def ask():
         response = requests.post(GROQ_URL, headers=headers, json=data)
         response.raise_for_status()
         result = response.json()
-        print(f"Groq Response: {result}")  # Debugging
+        print(f"Groq Response: {result}")
 
         reply = result['choices'][0]['message']['content']
 
-        # Store the current conversation turn
         current_conversation.append({'query': query, 'response': reply})
 
-        # Format the response
         formatted_reply = format_code_blocks(markdown.markdown(reply))
-        print(f"Flask Response: {jsonify({'response': formatted_reply})}") # Debugging
+        print(f"Flask Response: {jsonify({'response': formatted_reply, 'is_error': False})}")
 
-        return jsonify({'response': formatted_reply, 'is_error': False}) # Ensure is_error is always included
+        return jsonify({'response': formatted_reply, 'is_error': False})
 
     except requests.exceptions.RequestException as e:
         error_message = f"API request failed: {str(e)}"
-        print(f"Flask Error (RequestException): {error_message}") # Debugging
+        print(f"Flask Error (RequestException): {error_message}")
         return jsonify({'error': error_message, 'is_error': True})
     except Exception as e:
         error_message = f"An error occurred: {str(e)}"
-        print(f"Flask Error (General): {error_message}") # Debugging
+        print(f"Flask Error (General): {error_message}")
         return jsonify({'error': error_message, 'is_error': True})
 
 @app.route('/new_chat', methods=['POST'])
