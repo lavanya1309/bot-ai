@@ -114,14 +114,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
         } else if (sender === 'ai') {
+            let formattedMessage = message;
+            // Find all code blocks and add a copy button
+            formattedMessage = formattedMessage.replace(/<div class="code-block"><pre><code class="([^"]*)">([\s\S]*?)<\/code><\/pre><\/div>/g, (match, language, code) => {
+                const escapedCode = code.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+                return `
+                    <div class="code-block">
+                        <pre><code class="${language}">${code}</code></pre>
+                        <button class="copy-button" data-code="${encodeURIComponent(escapedCode)}"><i class="fas fa-copy"></i> Copy</button>
+                    </div>
+                `;
+            });
             messageDiv.innerHTML = `
                 <div class="ai-message">
                     <div class="avatar"><i class="fas fa-robot"></i></div>
-                    <div class="content">${message}</div>
+                    <div class="content">${formattedMessage}</div>
                 </div>
             `;
         }
         chatContainer.appendChild(messageDiv);
+        // After appending the message, attach event listeners to the new copy buttons
+        attachCopyEventListeners();
+    }
+
+    function attachCopyEventListeners() {
+        const copyButtons = document.querySelectorAll('.copy-button');
+        copyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const code = decodeURIComponent(this.dataset.code);
+                navigator.clipboard.writeText(code)
+                    .then(() => {
+                        // Optional: Provide visual feedback (e.g., change button text briefly)
+                        this.textContent = 'Copied!';
+                        setTimeout(() => {
+                            this.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                        }, 1500);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy text: ', err);
+                        this.textContent = 'Error';
+                        setTimeout(() => {
+                            this.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                        }, 1500);
+                    });
+            });
+        });
     }
 
     if (previousChatsList) {
