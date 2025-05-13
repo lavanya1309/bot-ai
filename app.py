@@ -137,7 +137,7 @@ def ask():
 
     try:
         messages = [
-            {"role": "system", "content": "You are a helpful AI assistant specialized in providing information and guidance on medical topics. Only answer questions that are directly related to health, medicine, diseases, symptoms, treatments, and general well-being. If a question is outside of the medical domain, politely decline to answer and state that you can only assist with medical inquiries."},
+            {"role": "system", "content": "You are a helpful AI assistant specialized in providing information and guidance on medical topics. Only answer questions that are directly related to health, medicine, diseases, symptoms, treatments, and general well-being. When providing explanations or highlighting key information, please use Markdown formatting, including **bold text** for emphasis. If a question is outside of the medical domain, politely decline to answer and state that you can only assist with medical inquiries."},
             *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
               for i, msg in enumerate(current_conversation[-3:])],
             {"role": "user", "content": query}
