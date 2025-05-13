@@ -7,6 +7,7 @@ from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
 from datetime import datetime, timedelta
 import json  # For saving/loading chat history
+import os
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -18,7 +19,6 @@ MODEL = "llama3-70b-8192"
 
 # Directory to store chat history
 CHAT_HISTORY_DIR = "chat_history"
-import os
 os.makedirs(CHAT_HISTORY_DIR, exist_ok=True)
 
 # Store the current conversation
@@ -133,9 +133,9 @@ def ask():
 
 @app.route('/new_chat', methods=['POST'])
 def new_chat():
+    global current_conversation
     if current_conversation:
         save_chat_history(current_conversation)
-    global current_conversation
     current_conversation = []
     return jsonify({'success': True})
 
