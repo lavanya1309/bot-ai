@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
 # Groq AI API configuration
-GROQ_API_KEY = "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"  # Replace with your actual Groq API key
+GROQ_API_KEY = "gsk_your_groq_api_key_here"  # Replace with your actual Groq API key
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL = "llama3-70b-8192"
 
@@ -91,6 +91,21 @@ def ask():
     if not query.strip():
         return jsonify({'error': 'Please enter a question', 'is_error': True, 'response': ''})
 
+    # --- Greetings and Wishes Handling ---
+    greetings = ["hi", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening"]
+    wishes = ["thank you", "thanks", "good luck", "have a nice day", "bye", "goodbye", "see you"]
+
+    if query.lower() in greetings:
+        response = f"Hello there! How can I help you with your medical questions today?"
+        current_conversation.append({'query': query, 'response': response})
+        formatted_response = markdown.markdown(response)
+        return jsonify({'response': formatted_response, 'is_error': False})
+    elif any(wish in query.lower() for wish in wishes):
+        response = "You're welcome! If you have any medical concerns, feel free to ask."
+        current_conversation.append({'query': query, 'response': response})
+        formatted_response = markdown.markdown(response)
+        return jsonify({'response': formatted_response, 'is_error': False})
+
     # --- Medical Question Filtering ---
     medical_keywords = [
         "fever", "cough", "pain", "diagnosis", "treatment", "symptoms", "doctor", "medication", "disease", "illness",
@@ -156,7 +171,6 @@ def ask():
 
         response = requests.post(GROQ_URL, headers=headers, json=data)
         response.raise_for_status()
-        result = response.json()
         print(f"Groq Response: {result}")
 
         reply = result['choices'][0]['message']['content']
