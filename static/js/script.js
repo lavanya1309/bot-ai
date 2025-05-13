@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const li = document.createElement('li');
                     li.dataset.filename = chat.filename;
                     li.className = 'previous-chat-item';
-                    li.innerHTML = `<span class="math-inline">\{chat\.summary\} <span class\="chat\-time"\>\(</span>{chat.timestamp})</span>`;
+                    li.innerHTML = `${chat.summary} <span class="chat-time">(${chat.timestamp})</span>`;
                     previousChatsList.appendChild(li);
                 });
             } else {
@@ -94,7 +94,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.disabled = false;
                 queryInput.disabled = false;
                 queryInput.focus();
-                // Re-highlight code blocks after AI response
                 document.querySelectorAll('pre code').forEach((block) => {
                     hljs.highlightElement(block);
                 });
@@ -106,6 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function appendMessage(sender, message) {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message';
+        let contentDiv;
         if (sender === 'user') {
             messageDiv.innerHTML = `
                 <div class="user-message">
@@ -120,3 +120,59 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="content">${message}</div>
                 </div>
             `;
+        }
+        chatContainer.appendChild(messageDiv);
+    }
+
+    if (previousChatsList) {
+        previousChatsList.addEventListener('click', async function(event) {
+            const listItem = event.target.closest('.previous-chat-item');
+            if (listItem) {
+                const filename = listItem.dataset.filename;
+                try {
+                    const response = await fetch('/load_chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `filename=${encodeURIComponent(filename)}`
+                    });
+                    if (!response.ok) {
+                        console.error('Error loading chat:', response.status, await response.text());
+                        return;
+                    }
+                    const data = await response.json();
+                    if (data.success) {
+                        chatContainer.innerHTML = '';
+                        data.conversation.forEach(item => {
+                            const messageDiv = document.createElement('div');
+                            messageDiv.className = 'message';
+                            messageDiv.innerHTML = `
+                                <div class="user-message">
+                                    <div class="avatar"><i class="fas fa-user"></i></div>
+                                    <div class="content">${item.query}</div>
+                                </div>
+                                <div class="ai-message">
+                                    <div class="avatar"><i class="fas fa-robot"></i></div>
+                                    <div class="content">${item.response}</div>
+                                </div>
+                            `;
+                            chatContainer.appendChild(messageDiv);
+                        });
+                        document.querySelectorAll('pre code').forEach((block) => {
+                            hljs.highlightElement(block);
+                        });
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    } else {
+                        console.error('Error loading chat:', data.error);
+                    }
+                } catch (error) {
+                    console.error('Fetch error loading chat:', error);
+                }
+            }
+        });
+    }
+
+    // Initial load of previous chats (optional, as the template already does this)
+    // updatePreviousChats();
+});
