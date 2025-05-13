@@ -71,6 +71,11 @@ def format_code_blocks(text):
     pattern = re.compile(r'```(\w+)?\n(.*?)\n```', re.DOTALL)
     return re.sub(pattern, replace, text)
 
+@app.route('/get_last_day_chats', methods=['GET'])
+def get_last_day_chats_ajax():
+    chats = get_last_day_chats()
+    return jsonify(chats)
+
 @app.route('/')
 def index():
     previous_chats = get_last_day_chats()
