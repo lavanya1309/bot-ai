@@ -162,7 +162,7 @@ body {
     padding-top: 5px;
     padding-left: 15px;
     border-left: 4px solid var(--primary-color);
-    margin-left: -14px;
+    margin-left: -16px;
 }
 
 .avatar {
@@ -254,18 +254,36 @@ button:hover {
     background-color: #e0e0e0;
 }
 
-@media (max-width: 768px) {
-    .app-container {
-        flex-direction: column;
-    }
+.code-block {
+    position: relative; /* To position the copy button */
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f6f8fa;
+    overflow: auto; /* Ensure scrollbar if code is long */
+}
 
-    .left-sidebar {
-        width: 100%;
-        margin-bottom: 15px;
-    }
+.code-block pre {
+    margin: 10px;
+    padding: 0;
+}
 
-    .chat-area {
-        width: 100%;
-        height: auto;
-    }
+.copy-button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: #eee;
+    color: var(--text-color);
+    border: none;
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+}
+
+.copy-button:hover {
+    opacity: 1;
+    background-color: #ddd;
 }
