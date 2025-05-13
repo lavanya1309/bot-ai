@@ -114,6 +114,15 @@ body {
     display: flex;
     margin-bottom: 10px;
     gap: 15px;
+    padding-left: 5px; /* Add some padding to the left of the whole AI message */
+}
+
+.ai-message .content {
+    flex: 1;
+    padding-top: 5px;
+    padding-left: 10px; /* Keep some padding for text */
+    border-left: 4px solid var(--primary-color);
+    margin-left: -4px; /* Shift the content (and border) to the left */
 }
 
 .avatar {
@@ -140,8 +149,7 @@ body {
 }
 
 .ai-message .content {
-    padding-left: 10px;
-    border-left: 4px solid var(--primary-color);
+    /* Existing styles */
 }
 
 .query-form {
