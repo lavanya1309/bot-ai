@@ -1,56 +1,268 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeepSeek-like AI Assistant</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css)">
-    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css](https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css)">
-</head>
-<body>
-    <div class="app-container">
-        <button id="newChatBtn" class="new-chat-button">
-            <i class="fas fa-plus-circle"></i> New Chat
-        </button>
+:root {
+    --primary-color: #4361ee;
+    --secondary-color: #3a0ca3;
+    --text-color: #333;
+    --light-gray: #f5f5f5;
+    --dark-gray: #666;
+    --error-color: #e63946;
+    --success-color: #2a9d8f;
+}
 
-        <header class="app-header">
-            <h1><i class="fas fa-robot"></i> AI Assistant</h1>
-            <p class="subtitle">Ask me anything, and I'll help you</p>
-        </header>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-        <div class="chat-container" id="chatContainer">
-            {% for item in conversation %}
-                <div class="message {% if item.is_error %}error{% endif %}">
-                    <div class="user-message">
-                        <div class="avatar"><i class="fas fa-user"></i></div>
-                        <div class="content">{{ item.query|safe }}</div>
-                    </div>
-                    <div class="ai-message">
-                        <div class="avatar"><i class="fas fa-robot"></i></div>
-                        <div class="content">{{ item.response|safe }}</div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: #f9f9f9;
+}
 
-        <form id="queryForm" class="query-form">
-            <div class="input-group">
-                <input type="text" id="queryInput" placeholder="Ask your question..." required>
-                <button type="submit" id="submitBtn">
-                    <i class="fas fa-paper-plane"></i> Send
-                </button>
-            </div>
-            <div class="suggestions">
-                <span>Try asking:</span>
-                <button type="button" class="suggestion-btn">How to install Python?</button>
-                <button type="button" class="suggestion-btn">Fix 'ModuleNotFoundError'</button>
-                <button type="button" class="suggestion-btn">Explain machine learning</button>
-            </div>
-        </form>
-    </div>
+.app-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column; /* Ensure items are stacked vertically */
+    align-items: flex-start; /* Align items to the start (left by default) */
+    height: 100vh;
+}
 
-    <script src="[https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js](https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js)"></script>
-    <script src="/static/js/script.js"></script>
-</body>
-</html>
+.app-header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    width: 100%; /* Make header span the full width */
+}
+
+.app-header h1 {
+    color: var(--primary-color);
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    color: var(--dark-gray);
+    font-size: 0.9rem;
+}
+
+.chat-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    width: 100%; /* Make chat container take full width */
+}
+
+.message {
+    margin-bottom: 25px;
+}
+
+.message.error .ai-message {
+    border-left: 4px solid var(--error-color);
+}
+
+.user-message, .ai-message {
+    display: flex;
+    margin-bottom: 10px;
+    gap: 15px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--light-gray);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--primary-color);
+    font-size: 18px;
+}
+
+.ai-message .avatar {
+    background-color: #e3f2fd;
+    color: var(--secondary-color);
+}
+
+.content {
+    flex: 1;
+    padding-top: 5px;
+}
+
+.ai-message .content {
+    padding-left: 10px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.query-form {
+    margin-top: auto;
+    width: 100%; /* Make form span the full width */
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+input[type="text"] {
+    flex: 1;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 30px;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+}
+
+button {
+    padding: 12px 20px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+button:hover {
+    background-color: var(--secondary-color);
+}
+
+.suggestions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+    color: var(--dark-gray);
+    margin-top: 10px; /* Add some space above suggestions */
+}
+
+.suggestion-btn {
+    padding: 8px 12px;
+    background-color: var(--light-gray);
+    color: var(--text-color);
+    font-size: 0.8rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.suggestion-btn:hover {
+    background-color: #e0e0e0;
+}
+
+/* Markdown styling */
+.content h1, .content h2, .content h3 {
+    margin: 15px 0 10px;
+    color: var(--secondary-color);
+}
+
+.content p {
+    margin-bottom: 10px;
+}
+
+.content ul, .content ol {
+    margin: 10px 0 10px 20px;
+}
+
+.content pre {
+    background-color: #f8f8f8;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 15px 0;
+}
+
+.content code {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #f0f0f0;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+.content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 15px 0;
+}
+
+.content table, .content th, .content td {
+    border: 1px solid #ddd;
+}
+
+.content th, .content td {
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.content th {
+    background-color: #f2f2f2;
+}
+
+/* Loading animation */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(67, 97, 238, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--primary-color);
+    animation: spin 1s ease-in-out infinite;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .app-container {
+        padding: 10px;
+    }
+
+    .user-message, .ai-message {
+        gap: 10px;
+    }
+
+    .suggestions {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+.new-chat-button {
+    background-color: var(--light-gray);
+    color: var(--text-color);
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-bottom: 15px;
+    transition: background-color 0.3s;
+    align-self: flex-start; /* Align to the left */
+    margin-right: 15px; /* Add some spacing to the right */
+}
+
+.new-chat-button i {
+    margin-right: 5px;
+}
