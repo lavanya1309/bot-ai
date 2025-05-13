@@ -3,51 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>one.ai</title>
+    <title>DeepSeek-like AI Assistant</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css)">
     <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css](https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css)">
 </head>
 <body>
     <div class="app-container">
-        <header class="app-header">
-            <h1><i class="fas fa-robot"></i> AI Assistant</h1>
-            <p class="subtitle">Ask me anything, and I'll help you</p>
-        </header>
-
-        <button id="newChatBtn" class="new-chat-button">
-            <i class="fas fa-plus-circle"></i> New Chat
-        </button>
-
-        <div class="chat-container" id="chatContainer">
-            {% for item in conversation %}
-                <div class="message {% if item.is_error %}error{% endif %}">
-                    <div class="user-message">
-                        <div class="avatar"><i class="fas fa-user"></i></div>
-                        <div class="content">{{ item.query|safe }}</div>
+        <div class="left-sidebar">
+            <header class="app-header-left">
+                <h1><i class="fas fa-robot"></i> AI Assistant</h1>
+                <p class="subtitle">Ask me anything, and I'll help you</p>
+            </header>
+            <button id="newChatBtn" class="new-chat-button">
+                <i class="fas fa-plus-circle"></i> New Chat
+            </button>
+            </div>
+        <div class="chat-area">
+            <div class="chat-container" id="chatContainer">
+                {% for item in conversation %}
+                    <div class="message {% if item.is_error %}error{% endif %}">
+                        <div class="user-message">
+                            <div class="avatar"><i class="fas fa-user"></i></div>
+                            <div class="content">{{ item.query|safe }}</div>
+                        </div>
+                        <div class="ai-message">
+                            <div class="avatar"><i class="fas fa-robot"></i></div>
+                            <div class="content">{{ item.response|safe }}</div>
+                        </div>
                     </div>
-                    <div class="ai-message">
-                        <div class="avatar"><i class="fas fa-robot"></i></div>
-                        <div class="content">{{ item.response|safe }}</div>
-                    </div>
+                {% endfor %}
+            </div>
+            <form id="queryForm" class="query-form">
+                <div class="input-group">
+                    <input type="text" id="queryInput" placeholder="Ask your question..." required>
+                    <button type="submit" id="submitBtn">
+                        <i class="fas fa-paper-plane"></i> Send
+                    </button>
                 </div>
-            {% endfor %}
+                <div class="suggestions">
+                    <span>Try asking:</span>
+                    <button type="button" class="suggestion-btn">How to install Python?</button>
+                    <button type="button" class="suggestion-btn">Fix 'ModuleNotFoundError'</button>
+                    <button type="button" class="suggestion-btn">Explain machine learning</button>
+                </div>
+            </form>
         </div>
-
-        <form id="queryForm" class="query-form">
-            <div class="input-group">
-                <input type="text" id="queryInput" placeholder="Ask your question..." required>
-                <button type="submit" id="submitBtn">
-                    <i class="fas fa-paper-plane"></i> Send
-                </button>
-            </div>
-            <div class="suggestions">
-                <span>Try asking:</span>
-                <button type="button" class="suggestion-btn">How to install Python?</button>
-                <button type="button" class="suggestion-btn">Fix 'ModuleNotFoundError'</button>
-                <button type="button" class="suggestion-btn">Explain machine learning</button>
-            </div>
-        </form>
     </div>
 
     <script src="[https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js](https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js)"></script>
