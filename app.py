@@ -89,11 +89,55 @@ def index():
 def ask():
     query = request.form['query']
     if not query.strip():
-        return jsonify({'error': 'Please enter a question', 'is_error': True})
+        return jsonify({'error': 'Please enter a question', 'is_error': True, 'response': ''})
+
+    # --- Medical Question Filtering ---
+    medical_keywords = [
+        "fever", "cough", "pain", "diagnosis", "treatment", "symptoms", "doctor", "medication", "disease", "illness",
+        "prescription", "hospital", "clinic", "medical", "health", "wellness", "anatomy", "physiology", "pathology",
+        "infection", "virus", "bacteria", "inflammation", "allergy", "injury", "wound", "fracture", "sprain",
+        "burn", "rash", "itching", "swelling", "nausea", "vomiting", "diarrhea", "constipation", "headache",
+        "dizziness", "fatigue", "weakness", "chest pain", "shortness of breath", "palpitations", "blood pressure",
+        "heart rate", "glucose", "cholesterol", "insulin", "vaccine", "immunization", "therapy", "surgery",
+        "rehabilitation", "prognosis", "complication", "acute", "chronic", "benign", "malignant", "tumor", "cancer",
+        "arthritis", "asthma", "diabetes", "hypertension", "cardiovascular", "neurological", "gastrointestinal",
+        "respiratory", "endocrine", "urological", "gynecological", "pediatric", "geriatric", "ophthalmology",
+        "dermatology", "psychiatry", "allergy", "immunology", "pharmacology", "radiology", "anesthesia",
+        "nurse", "physician", "surgeon", "pharmacist", "therapist", "specialist", "emergency", "urgent care",
+        "first aid", "recovery", "remission", "relapse", "terminal", "palliative", "contagious", "hereditary",
+        "genetic", "syndrome", "condition", "disorder", "care", "support", "well-being", "prevention",
+        "screening", "check-up", "vaccination", "immunodeficiency", "autoimmune", "transplant", "dialysis",
+        "radiotherapy", "chemotherapy", "antibiotics", "antivirals", "antifungals", "analgesics", "antihistamines",
+        "steroids", "sedatives", "antidepressants", "antipsychotics", "vaccinate", "immunize", "treat", "cure",
+        "manage", "alleviate", "mitigate", "monitor", "assess", "evaluate", "examine", "diagnose", "prescribe",
+        "operate", "rehabilitate", "recover", "heal", "suffer", "afflict", "contract", "develop", "experience",
+        "report", "complain", "indicate", "suggest", "imply", "manifest", "present", "undergo", "receive",
+        "administer", "apply", "ingest", "inject", "inhale", "exhale", "secrete", "excrete", "metabolize",
+        "absorb", "distribute", "eliminate", "mutate", "proliferate", "regenerate", "degenerate", "atrophy",
+        "hypertrophy", "neoplasia", "metastasis", "ischemia", "infarction", "hemorrhage", "thrombosis", "embolism",
+        "edema", "necrosis", "apoptosis", "inflammation", "infection", "infestation", "colonization", "virulence",
+        "pathogenicity", "immunity", "antigen", "antibody", "lymphocyte", "phagocyte", "cytokine", "hormone",
+        "enzyme", "neurotransmitter", "receptor", "ion channel", "membrane", "nucleus", "cytoplasm", "organelle",
+        "tissue", "organ", "system", "apparatus", "tract", "gland", "nerve", "vessel", "muscle", "bone", "joint",
+        "skin", "hair", "nail", "eye", "ear", "nose", "throat", "mouth", "tongue", "teeth", "gum", "saliva",
+        "esophagus", "stomach", "intestine", "liver", "pancreas", "kidney", "bladder", "ureter", "urethra",
+        "lung", "bronchus", "alveoli", "trachea", "larynx", "pharynx", "heart", "artery", "vein", "capillary",
+        "brain", "spinal cord", "neuron", "synapse", "skull", "rib", "vertebra", "pelvis", "femur", "tibia",
+        "fibula", "humerus", "radius", "ulna", "carpals", "metacarpals", "phalanges", "tarsals", "metatarsals",
+        "ligament", "tendon", "cartilage", "blood", "plasma", "red blood cell", "white blood cell", "platelet",
+        "lymph", "mucus", "pus", "urine", "feces", "sweat", "tears", "semen", "ovum", "fetus", "embryo",
+        "placenta", "umbilical cord", "gene", "chromosome", "DNA", "RNA", "protein", "cell", "molecule", "atom"
+    ]
+    is_medical_query = any(keyword in query.lower() for keyword in medical_keywords)
+
+    if not is_medical_query:
+        non_medical_response = "I can only answer medical-related questions. Please ask me something related to health or medical topics."
+        return jsonify({'response': non_medical_response, 'is_error': False})
+    # --- End of Filtering ---
 
     try:
         messages = [
-            {"role": "system", "content": "You are a helpful AI assistant. Your goal is to understand the user's questions and provide clear, concise, and easy-to-understand answers. When providing code, always enclose it in markdown code blocks (using ```) and follow it with a step-by-step explanation of what the code does. Use analogies or real-world examples whenever possible to clarify complex concepts. Tailor your explanations to be accessible to a general audience."},
+            {"role": "system", "content": "You are a helpful AI assistant specialized in providing information and guidance on medical topics. Only answer questions that are directly related to health, medicine, diseases, symptoms, treatments, and general well-being. If a question is outside of the medical domain, politely decline to answer and state that you can only assist with medical inquiries."},
             *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
               for i, msg in enumerate(current_conversation[-3:])],
             {"role": "user", "content": query}
@@ -127,11 +171,11 @@ def ask():
     except requests.exceptions.RequestException as e:
         error_message = f"API request failed: {str(e)}"
         print(f"Flask Error (RequestException): {error_message}")
-        return jsonify({'error': error_message, 'is_error': True})
+        return jsonify({'error': error_message, 'is_error': True, 'response': 'An error occurred while processing your medical question.'})
     except Exception as e:
         error_message = f"An error occurred: {str(e)}"
         print(f"Flask Error (General): {error_message}")
-        return jsonify({'error': error_message, 'is_error': True})
+        return jsonify({'error': error_message, 'is_error': True, 'response': 'An unexpected error occurred.'})
 
 @app.route('/new_chat', methods=['POST'])
 def new_chat():
