@@ -14,7 +14,7 @@ GROQ_API_KEY = "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"  # Get
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL = "llama3-70b-8192"
 
-# Store conversation history
+# Store conversation history (now stores a list of turns for the current chat)
 conversation_history = []
 
 def format_code_blocks(text):
@@ -49,7 +49,7 @@ def ask():
 
     try:
         messages = [
-            {"role": "system", "content": "You are a helpful AI assistant. When providing code, always enclose it in markdown code blocks (using ```). After the code block, provide a clear and concise explanation of the code."},
+            {"role": "system", "content": "You are a helpful AI assistant. Your goal is to understand the user's questions and provide clear, concise, and easy-to-understand answers. When providing code, always enclose it in markdown code blocks (using ```) and follow it with a step-by-step explanation of what the code does. Use analogies or real-world examples whenever possible to clarify complex concepts. Tailor your explanations to be accessible to a general audience."},
             *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
               for i, msg in enumerate(conversation_history[-3:])],
             {"role": "user", "content": query}
@@ -73,7 +73,7 @@ def ask():
 
         reply = result['choices'][0]['message']['content']
 
-        # Store the conversation
+        # Store the conversation turn
         conversation_history.append({'query': query, 'response': reply})
 
         # Format the response
