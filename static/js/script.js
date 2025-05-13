@@ -24,7 +24,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     const li = document.createElement('li');
                     li.dataset.filename = chat.filename;
                     li.className = 'previous-chat-item';
-                    li.innerHTML = `${chat.summary} <span class="chat-time">(${chat.timestamp})</span>`;
+                    li.innerHTML = `${chat.summary} <span class="chat-time">(${chat.timestamp})</span>
+                                    <button class="delete-chat-btn" data-filename="${chat.filename}">
+                                        <i class="fas fa-trash-alt"></i> Delete
+                                    </button>`;
                     previousChatsList.appendChild(li);
                 });
             } else {
@@ -163,16 +166,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (previousChatsList) {
         previousChatsList.addEventListener('click', async function(event) {
-            const listItem = event.target.closest('.previous-chat-item');
-            if (listItem) {
-                const filename = listItem.dataset.filename;
+            const loadItem = event.target.closest('.previous-chat-item');
+            const deleteButton = event.target.closest('.delete-chat-btn');
+
+            if (deleteButton) {
+                const filenameToDelete = deleteButton.dataset.filename;
+                if (confirm(`Are you sure you want to delete the chat: ${filenameToDelete}?`)) {
+                    try {
+                        const response = await fetch('/delete_chat', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: `filename=${encodeURIComponent(filenameToDelete)}`
+                        });
+                        if (!response.ok) {
+                            console.error('Error deleting chat:', response.status, await response.text());
+                            alert('Error deleting chat.');
+                            return;
+                        }
+                        const data = await response.json();
+                        if (data.success) {
+                            await updatePreviousChats(); // Reload the previous chats list
+                            clearChatDisplay(); // Optionally clear the main chat area
+                        } else {
+                            console.error('Error deleting chat:', data.error);
+                            alert(`Error deleting chat: ${data.error}`);
+                        }
+                    } catch (error) {
+                        console.error('Fetch error deleting chat:', error);
+                        alert('Failed to delete chat.');
+                    }
+                }
+            } else if (loadItem) {
+                const filenameToLoad = loadItem.dataset.filename;
                 try {
                     const response = await fetch('/load_chat', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
                         },
-                        body: `filename=${encodeURIComponent(filename)}`
+                        body: `filename=${encodeURIComponent(filenameToLoad)}`
                     });
                     if (!response.ok) {
                         console.error('Error loading chat:', response.status, await response.text());
@@ -210,6 +244,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Initial load of previous chats (optional, as the template already does this)
-    // updatePreviousChats();
+    // Initial load of previous chats
+    updatePreviousChats();
 });
