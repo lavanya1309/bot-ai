@@ -14,7 +14,7 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
 # Gemini AI API configuration
-GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE"  # Replace with your actual Gemini API key
+GEMINI_API_KEY = "AIzaSyCriLYjFnFwJ8rzjG7r358Ef_7ENsP-jLc"  # Replace with your actual Gemini API key
 MODEL_NAME = "gemini-pro"  # Or "gemini-pro-vision" for multimodal
 
 # Initialize Gemini API
