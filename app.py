@@ -27,6 +27,85 @@ safety_settings = [
     {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
 ]
 
+# Directory to store chat history
+CHAT_HISTORY_DIR = "chat_history"
+os.makedirs(CHAT_HISTORY_DIR, exist_ok=True)
+
+# Store the current conversation
+current_conversation = []
+
+def save_chat_history(history):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = os.path.join(CHAT_HISTORY_DIR, f"chat_{timestamp}.json")
+    with open(filename, 'w') as f:
+        json.dump(history, f)
+
+def load_chat_history(filename):
+    filepath = os.path.join(CHAT_HISTORY_DIR, filename)
+    with open(filepath, 'r') as f:
+        return json.load(f)
+
+def get_last_day_chats():
+    now = datetime.now()
+    one_day_ago = now - timedelta(days=1)
+    chat_files = [f for f in os.listdir(CHAT_HISTORY_DIR) if f.startswith("chat_") and f.endswith(".json")]
+    last_day_chats = []
+    for filename in sorted(chat_files, reverse=True):
+        try:
+            timestamp_str = filename[5:-5]
+            chat_time = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+            if chat_time >= one_day_ago:
+                history = load_chat_history(filename)
+                if history:
+                    summary = history[0]['query'][:50] + "..." if len(history[0]['query']) > 50 else history[0]['query']
+                    last_day_chats.append({'filename': filename, 'summary': summary, 'timestamp': chat_time.strftime("%H:%M")})
+                else:
+                    break
+        except ValueError:
+            continue
+    return last_day_chats
+
+def format_code_blocks(text):
+    def replace(match):
+        code = match.group(2)
+        language = match.group(1) if match.group(1) else 'python'
+        try:
+            lexer = get_lexer_by_name(language)
+        except:
+            lexer = get_lexer_by_name('text')
+        formatter = HtmlFormatter(style='monokai')
+        highlighted_code = highlight(code, lexer, formatter)
+        return f'<div class="code-block"><pre><code class="{language}">{highlighted_code}</code></pre></div>'
+    pattern = re.compile(r'```(\w+)?\n(.*?)\n```', re.DOTALL)
+    return re.sub(pattern, replace, text)
+
+@app.route('/get_last_day_chats', methods=['GET'])
+def get_last_day_chats_ajax():
+    chats = get_last_day_chats()
+    return jsonify(chats)
+
+@app.route('/delete_chat', methods=['POST'])
+def delete_chat():
+    filename = request.form['filename']
+    filepath = os.path.join(CHAT_HISTORY_DIR, filename)
+    try:
+        os.remove(filepath)
+        return jsonify({'success': True})
+    except FileNotFoundError:
+        return jsonify({'error': 'Chat history not found'}), 404
+    except Exception as e:
+        return jsonify({'error': f'Error deleting chat: {str(e)}'}), 500
+
+@app.route('/')
+def index():
+    previous_chats = get_last_day_chats()
+    formatted_history = []
+    for item in current_conversation:
+        formatted_query = markdown.markdown(item['query'])
+        formatted_response = format_code_blocks(markdown.markdown(item['response']))
+        formatted_history.append({'query': formatted_query, 'response': formatted_response})
+    return render_template('index.html', conversation=formatted_history, previous_chats=previous_chats)
+
 @app.route('/ask', methods=['POST'])
 def ask():
     query = request.form['query']
@@ -84,16 +163,6 @@ def load_chat():
         return jsonify({'error': 'Chat history not found'}), 404
     except Exception as e:
         return jsonify({'error': f'Error loading chat: {str(e)}'}), 500
-
-@app.route('/')
-def index():
-    previous_chats = get_last_day_chats()
-    formatted_history = []
-    for item in current_conversation:
-        formatted_query = markdown.markdown(item['query'])
-        formatted_response = format_code_blocks(markdown.markdown(item['response']))
-        formatted_history.append({'query': formatted_query, 'response': formatted_response})
-    return render_template('index.html', conversation=formatted_history, previous_chats=previous_chats)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
