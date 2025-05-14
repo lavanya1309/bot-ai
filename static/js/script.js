@@ -44,35 +44,37 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function attachDeleteEventListeners() {
-        const deleteButtons = document.querySelectorAll('.delete-chat-btn');
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', async function(event) {
-                event.stopPropagation(); // Prevent loading the chat when delete is clicked
-                const filename = this.dataset.filename;
-                if (confirm(`Are you sure you want to delete chat: ${filename}?`)) {
-                    try {
-                        const response = await fetch('/delete_chat', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                            },
-                            body: `filename=${encodeURIComponent(filename)}`
+        const copyButtons = document.querySelectorAll('.copy-button, .copy-answer-btn');
+        copyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                let textToCopy = '';
+                if (this.dataset.code) {
+                    textToCopy = decodeURIComponent(this.dataset.code);
+                } else if (this.dataset.text) {
+                    textToCopy = this.dataset.text;
+                }
+
+                console.log('Attempting to copy:', textToCopy); // Keep this for debugging
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(textToCopy)
+                        .then(() => {
+                            console.log('Text copied to clipboard successfully!');
+                            this.textContent = 'Copied!'; // Simple visual feedback
+                            setTimeout(() => {
+                                this.innerHTML = '<i class="fas fa-copy"></i> Copy'; // Revert text
+                            }, 1500);
+                        })
+                        .catch(err => {
+                            console.error('Failed to copy text: ', err);
+                            this.textContent = 'Error'; // Indicate an error
+                            setTimeout(() => {
+                                this.innerHTML = '<i class="fas fa-copy"></i> Copy'; // Revert text
+                            }, 1500);
                         });
-                        if (!response.ok) {
-                            console.error('Error deleting chat:', response.status, await response.text());
-                            alert('Error deleting chat.');
-                            return;
-                        }
-                        const data = await response.json();
-                        if (data.success) {
-                            await updatePreviousChats(); // Refresh the list after deletion
-                        } else {
-                            alert(data.error);
-                        }
-                    } catch (error) {
-                        console.error('Fetch error deleting chat:', error);
-                        alert('Failed to delete chat.');
-                    }
+                } else {
+                    console.error('Clipboard API not available in this browser.');
+                    alert('Clipboard API not available. Please copy manually.');
                 }
             });
         });
@@ -166,7 +168,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
             });
-            // LOG THE RAW MESSAGE HERE TO INSPECT ITS CONTENT
             console.log("Raw AI Message:", message);
             messageDiv.innerHTML = `
                 <div class="ai-message">
@@ -177,40 +178,45 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
             `;
+            // Attach event listeners IMMEDIATELY after the buttons are added to the DOM
+            const copyButtons = messageDiv.querySelectorAll('.copy-button, .copy-answer-btn');
+            copyButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    let textToCopy = '';
+                    if (this.dataset.code) {
+                        textToCopy = decodeURIComponent(this.dataset.code);
+                    } else if (this.dataset.text) {
+                        textToCopy = this.dataset.text;
+                    }
+
+                    console.log('Attempting to copy (inline):', textToCopy);
+
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(textToCopy)
+                            .then(() => {
+                                console.log('Text copied to clipboard successfully! (inline)');
+                                this.textContent = 'Copied!';
+                                setTimeout(() => {
+                                    this.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                                }, 1500);
+                            })
+                            .catch(err => {
+                                console.error('Failed to copy text (inline): ', err);
+                                this.textContent = 'Error';
+                                setTimeout(() => {
+                                    this.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                                }, 1500);
+                            });
+                    } else {
+                        console.error('Clipboard API not available in this browser. (inline)');
+                        alert('Clipboard API not available. Please copy manually.');
+                    }
+                });
+            });
         }
         chatContainer.appendChild(messageDiv);
-        attachCopyEventListeners(); // Make sure this is called after adding the message
-    }
-
-    function attachCopyEventListeners() {
-        const copyButtons = document.querySelectorAll('.copy-button, .copy-answer-btn');
-        copyButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                let textToCopy = '';
-                if (this.dataset.code) {
-                    textToCopy = decodeURIComponent(this.dataset.code);
-                } else if (this.dataset.text) {
-                    textToCopy = this.dataset.text;
-                }
-                // LOG THE VALUE BEING ATTEMPTED TO COPY
-                console.log('Attempting to copy:', textToCopy);
-                const originalHTML = this.innerHTML;
-                navigator.clipboard.writeText(textToCopy)
-                    .then(() => {
-                        this.innerHTML = 'Copied!';
-                        setTimeout(() => {
-                            this.innerHTML = originalHTML;
-                        }, 1500);
-                    })
-                    .catch(err => {
-                        console.error('Failed to copy text: ', err);
-                        this.innerHTML = 'Error';
-                        setTimeout(() => {
-                            this.innerHTML = originalHTML;
-                        }, 1500);
-                    });
-                });
-        });
+        // We are now attaching the listeners directly, so no need for a separate call here
+        // attachCopyEventListeners();
     }
 
     if (previousChatsList) {
@@ -250,12 +256,47 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             `;
                             chatContainer.appendChild(messageDiv);
+                            // Attach listeners after loading previous chat messages as well
+                            const copyButtons = messageDiv.querySelectorAll('.copy-button, .copy-answer-btn');
+                            copyButtons.forEach(button => {
+                                button.addEventListener('click', function() {
+                                    let textToCopy = '';
+                                    if (this.dataset.code) {
+                                        textToCopy = decodeURIComponent(this.dataset.code);
+                                    } else if (this.dataset.text) {
+                                        textToCopy = this.dataset.text;
+                                    }
+
+                                    console.log('Attempting to copy (load chat):', textToCopy);
+
+                                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                                        navigator.clipboard.writeText(textToCopy)
+                                            .then(() => {
+                                                console.log('Text copied to clipboard successfully! (load chat)');
+                                                this.textContent = 'Copied!';
+                                                setTimeout(() => {
+                                                    this.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                                                }, 1500);
+                                            })
+                                            .catch(err => {
+                                                console.error('Failed to copy text (load chat): ', err);
+                                                this.textContent = 'Error';
+                                                setTimeout(() => {
+                                                    this.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                                                }, 1500);
+                                            });
+                                    } else {
+                                        console.error('Clipboard API not available in this browser. (load chat)');
+                                        alert('Clipboard API not available. Please copy manually.');
+                                    }
+                                });
+                            });
                         });
                         document.querySelectorAll('pre code').forEach((block) => {
                             hljs.highlightElement(block);
                         });
                         chatContainer.scrollTop = chatContainer.scrollHeight;
-                        attachCopyEventListeners(); // Ensure this is called after loading previous chats
+                        // No need for separate attachCopyEventListeners here now
                     } else {
                         console.error('Error loading chat:', data.error);
                     }
@@ -266,6 +307,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    attachDeleteEventListeners(); // Initial attachment for delete buttons
-    // Initial load of previous chats is handled by the template
+    // The initial call to attachCopyEventListeners is removed as we are attaching them inline
 });
