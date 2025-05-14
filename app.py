@@ -1,3 +1,4 @@
+# app.py
 from flask import Flask, render_template, request, jsonify
 import requests
 import re
@@ -69,6 +70,37 @@ def format_code_blocks(text):
     pattern = re.compile(r'```(\w+)?\n(.*?)\n```', re.DOTALL)
     return re.sub(pattern, replace, text)
 
+def format_tables(text):
+    # Convert markdown tables to HTML tables with proper styling
+    def replace_table(match):
+        rows = match.group(1).strip().split('\n')
+        table_html = '<div class="table-container"><table class="comparison-table">'
+        for i, row in enumerate(rows):
+            cells = [cell.strip() for cell in row.split('|') if cell.strip()]
+            if i == 0:
+                table_html += '<thead><tr>'
+                tag = 'th'
+            else:
+                if i == 1:  # Skip the separator line
+                    continue
+                table_html += '<tr>'
+                tag = 'td'
+            
+            for cell in cells:
+                table_html += f'<{tag}>{cell}</{tag}>'
+            
+            if i == 0:
+                table_html += '</tr></thead><tbody>'
+            else:
+                table_html += '</tr>'
+        table_html += '</tbody></table></div>'
+        return table_html
+    
+    # Pattern for markdown tables
+    table_pattern = re.compile(r'\n((?:\|.*\|\n)+)', re.MULTILINE)
+    text = re.sub(table_pattern, replace_table, text)
+    return text
+
 @app.route('/get_last_day_chats', methods=['GET'])
 def get_last_day_chats_ajax():
     chats = get_last_day_chats()
@@ -93,6 +125,7 @@ def index():
     for item in current_conversation:
         formatted_query = markdown.markdown(item['query'])
         formatted_response = format_code_blocks(markdown.markdown(item['response']))
+        formatted_response = format_tables(formatted_response)
         formatted_history.append({'query': formatted_query, 'response': formatted_response})
     return render_template('index.html', conversation=formatted_history, previous_chats=previous_chats)
 
@@ -102,24 +135,33 @@ def ask():
     if not query.strip():
         return jsonify({'error': 'Please enter a question', 'is_error': True})
     try:
-        # Update the system message to ensure the response is in table format
         messages = [
-            {"role": "system", "content": """
-You are a highly skilled AI assistant that excels at providing information in structured formats. 
-When the user asks for a comparison or the difference between two or more items, 
-you MUST present the information as a Markdown table.
+            {"role": "system", "content": """You are a highly skilled AI assistant that excels at providing information in structured formats. When the user asks for a comparison or the difference between two or more items, you MUST present the information as a Markdown table.
 
 For example, if the user asks "What is the difference between X and Y?", your response should look like this:
 
 | Feature | X | Y |
-|---|---|---|
+|---------|---|---|
 | Feature 1 | Description of X's Feature 1 | Description of Y's Feature 1 |
 | Feature 2 | Description of X's Feature 2 | Description of Y's Feature 2 |
-| ... | ... | ... |
 
-Please ensure that all comparison questions are answered in table format.
-"""}, 
-            *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']} 
+For AWS vs Azure comparison:
+
+| Category | AWS Service | Azure Service |
+|----------|-------------|---------------|
+| Compute | EC2 | Virtual Machines |
+| Container Service | ECS, EKS | Azure Container Service (ACS), AKS |
+| Serverless | Lambda | Azure Functions |
+| Database (Relational) | RDS | Azure Database for MySQL/PostgreSQL/SQL Server |
+| Database (NoSQL) | DynamoDB | Azure Cosmos DB |
+| Storage (Object) | S3 | Blob Storage |
+| Storage (Block) | EBS | Azure Disk Storage |
+| Identity Management | IAM | Azure Active Directory (AAD) |
+| Network | VPC | Azure Virtual Network (VNet) |
+| AI/ML | SageMaker | Azure Machine Learning |
+
+Make sure tables are properly formatted with clear headers and consistent alignment."""},
+            *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
               for i, msg in enumerate(current_conversation[-3:])],
             {"role": "user", "content": query}
         ]
@@ -138,24 +180,20 @@ Please ensure that all comparison questions are answered in table format.
         response = requests.post(GROQ_URL, headers=headers, json=data)
         response.raise_for_status()
         result = response.json()
-        print(f"Groq Response: {result}")
 
         reply = result['choices'][0]['message']['content']
-
         current_conversation.append({'query': query, 'response': reply})
 
         formatted_reply = format_code_blocks(markdown.markdown(reply))
-        print(f"Flask Response: {jsonify({'response': formatted_reply, 'is_error': False})}")
+        formatted_reply = format_tables(formatted_reply)
 
         return jsonify({'response': formatted_reply, 'is_error': False})
 
     except requests.exceptions.RequestException as e:
         error_message = f"API request failed: {str(e)}"
-        print(f"Flask Error (RequestException): {error_message}")
         return jsonify({'error': error_message, 'is_error': True})
     except Exception as e:
         error_message = f"An error occurred: {str(e)}"
-        print(f"Flask Error (General): {error_message}")
         return jsonify({'error': error_message, 'is_error': True})
 
 @app.route('/new_chat', methods=['POST'])
@@ -176,6 +214,7 @@ def load_chat():
         for item in current_conversation:
             formatted_query = markdown.markdown(item['query'])
             formatted_response = format_code_blocks(markdown.markdown(item['response']))
+            formatted_response = format_tables(formatted_response)
             formatted_history.append({'query': formatted_query, 'response': formatted_response})
         return jsonify({'success': True, 'conversation': formatted_history})
     except FileNotFoundError:
