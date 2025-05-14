@@ -385,75 +385,75 @@ button:hover {
 
 /* Add these styles to your existing style.css */
 
-/* Table Styles */
-.comparison-table {
+/* Enhanced Table Styles */
+.table-container {
     width: 100%;
-    border-collapse: collapse;
+    overflow-x: auto;
     margin: 20px 0;
-    font-size: 0.95em;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
     border-radius: 8px;
 }
 
-.comparison-table thead tr {
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    min-width: 600px;
+}
+
+.table-header-row {
     background-color: var(--primary-color);
     color: white;
-    text-align: left;
-    font-weight: bold;
 }
 
-.comparison-table th,
-.comparison-table td {
+.table-header-row th {
     padding: 12px 15px;
-    border: 1px solid #e0e0e0;
+    text-align: left;
+    font-weight: 600;
 }
 
-.comparison-table tbody tr {
-    border-bottom: 1px solid #e0e0e0;
+.table-data-row {
+    border-bottom: 1px solid #dddddd;
     transition: all 0.2s ease;
 }
 
-.comparison-table tbody tr:nth-of-type(even) {
+.table-data-row:nth-of-type(even) {
     background-color: #f8f9fa;
 }
 
-.comparison-table tbody tr:last-of-type {
+.table-data-row:last-of-type {
     border-bottom: 2px solid var(--primary-color);
 }
 
-.comparison-table tbody tr:hover {
+.table-data-row:hover {
     background-color: #f1f3f5;
-    transform: translateX(2px);
 }
 
-/* Responsive tables */
-@media screen and (max-width: 768px) {
-    .comparison-table {
-        display: block;
-        overflow-x: auto;
-        white-space: nowrap;
-    }
-}
-
-/* Message container adjustments for tables */
-.ai-message .content table {
-    margin: 15px 0;
-    max-width: 100%;
-}
-
-/* Code block and table spacing */
-.code-block + .comparison-table,
-.comparison-table + .code-block {
-    margin-top: 25px;
-}
-
-/* Table caption styling */
-.comparison-table caption {
-    font-size: 0.9em;
-    color: var(--dark-gray);
-    margin-bottom: 10px;
+.comparison-table td {
+    padding: 12px 15px;
     text-align: left;
-    font-style: italic;
+    border-right: 1px solid #e0e0e0;
+}
+
+.comparison-table td:last-child {
+    border-right: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .table-container {
+        border-radius: 0;
+        box-shadow: none;
+        border: 1px solid #e0e0e0;
+    }
+    
+    .comparison-table {
+        font-size: 0.85em;
+    }
+    
+    .comparison-table td, 
+    .table-header-row th {
+        padding: 8px 10px;
+    }
 }
 
