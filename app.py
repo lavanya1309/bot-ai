@@ -14,8 +14,8 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
 # Gemini AI API configuration
-GEMINI_API_KEY = "AIzaSyCriLYjFnFwJ8rzjG7r358Ef_7ENsP-jLc"  # Replace with your actual Gemini API key
-MODEL_NAME = "gemini-1.0-pro"  # Or "gemini-pro-vision" for multimodal
+GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE"  # Replace with your actual Gemini API key
+MODEL_NAME = "gemini-1.0-pro"  # Try this model name (or "gemini-pro", "gemini-1.5-pro-latest", etc.)
 
 # Initialize Gemini API
 genai.configure(api_key=GEMINI_API_KEY)
@@ -124,7 +124,7 @@ def ask():
                 "parts": [{"text": msg["content"]}]
             })
 
-        model = genai.GenerativeModel("gemini-pro")  # Explicitly use "gemini-pro" here
+        model = genai.GenerativeModel(MODEL_NAME)  # Instantiate model with the current MODEL_NAME
         response = model.generate_content(
             contents=contents
         )
@@ -163,6 +163,16 @@ def load_chat():
         return jsonify({'error': 'Chat history not found'}), 404
     except Exception as e:
         return jsonify({'error': f'Error loading chat: {str(e)}'}), 500
+
+# Optional route to list available models (for debugging)
+# @app.route('/list_models')
+# def list_models():
+#     try:
+#         for model_info in genai.list_models():
+#             print(model_info)
+#         return "Models listed in console"
+#     except Exception as e:
+#         return f"Error listing models: {e}"
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
