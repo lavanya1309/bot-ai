@@ -68,40 +68,34 @@ def format_code_blocks(text):
     return re.sub(pattern, replace, text)
 
 def format_tables(text):
-    # Fix malformed tables
-    text = re.sub(r'\|\s*\|\s*\|', '| --- | --- |', text)
+    # Fix malformed Markdown tables (missing header separators)
+    text = re.sub(r'(\|.*\|)\s*(\|.*\|)', r'\1\n| --- | --- |\n\2', text)
     
-    # Add table containers and styling
+    # Convert Markdown tables to HTML
+    text = re.sub(
+        r'\|(.*?)\|\s*\|\s*---\s*\|\s*---\s*\|\s*\|(.*?)\|',
+        lambda m: f'<table><thead><tr><th>{m.group(1)}</th><th>{m.group(2)}</th></tr></thead><tbody>',
+        text,
+        flags=re.DOTALL
+    )
+    
+    # Add remaining rows
+    text = re.sub(
+        r'\|(.*?)\|\s*\|(.*?)\|',
+        lambda m: f'<tr><td>{m.group(1)}</td><td>{m.group(2)}</td></tr>',
+        text
+    )
+    
+    # Close the table
+    text = re.sub(r'<\/tbody>', '</tbody></table>', text)
+    
+    # Add proper table containers and styling
     text = re.sub(
         r'<table>',
         '<div class="table-container"><table class="comparison-table">',
         text
     )
     text = re.sub(r'</table>', '</table></div>', text)
-    
-    # Header styling
-    text = re.sub(
-        r'<thead>',
-        '<thead><tr class="table-header-row">',
-        text
-    )
-    
-    # Row styling
-    text = re.sub(
-        r'<tr>',
-        '<tr class="table-data-row">',
-        text
-    )
-    
-    # Fix empty cells
-    text = re.sub(r'<td>\s*</td>', '<td>—</td>', text)
-    
-    # Add cell padding
-    text = re.sub(
-        r'<td>',
-        '<td style="padding: 12px 15px;">',
-        text
-    )
     
     return text
 
