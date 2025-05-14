@@ -382,15 +382,14 @@ button:hover {
     --chat-bg: #f0f8ff;
 }
 
-
-/* Enhanced Table Styles */
+/* Table Styles */
 .table-container {
     width: 100%;
     overflow-x: auto;
     margin: 20px 0;
+    background: white;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    background: white;
 }
 
 .comparison-table {
@@ -400,12 +399,9 @@ button:hover {
     min-width: 600px;
 }
 
-.comparison-table thead {
-    background-color: var(--primary-color);
-    color: white;
-}
-
 .comparison-table th {
+    background-color: #4361ee;
+    color: white;
     padding: 15px;
     text-align: left;
     font-weight: 600;
@@ -414,6 +410,7 @@ button:hover {
 .comparison-table td {
     padding: 12px 15px;
     border-bottom: 1px solid #e0e0e0;
+    vertical-align: top;
 }
 
 .comparison-table tr:last-child td {
@@ -428,7 +425,7 @@ button:hover {
     background-color: #f1f3f5;
 }
 
-/* Mobile responsiveness */
+/* Responsive tables */
 @media (max-width: 768px) {
     .table-container {
         border: 1px solid #e0e0e0;
