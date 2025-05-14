@@ -1,4 +1,3 @@
-# app.py
 from flask import Flask, render_template, request, jsonify
 import google.generativeai as genai
 import re
@@ -15,7 +14,7 @@ app.secret_key = 'your_secret_key_here'
 
 # Gemini AI API configuration
 GEMINI_API_KEY = "AIzaSyCriLYjFnFwJ8rzjG7r358Ef_7ENsP-jLc"  # Replace with your actual Gemini API key
-MODEL_NAME = "gemini-1.0-pro"  # Try this model name (or "gemini-pro", "gemini-1.5-pro-latest", etc.)
+MODEL_NAME = "models/gemini-pro"  # ✅ Fixed model name
 
 # Initialize Gemini API
 genai.configure(api_key=GEMINI_API_KEY)
@@ -124,10 +123,8 @@ def ask():
                 "parts": [{"text": msg["content"]}]
             })
 
-        model = genai.GenerativeModel(MODEL_NAME)  # Instantiate model with the current MODEL_NAME
-        response = model.generate_content(
-            contents=contents
-        )
+        model = genai.GenerativeModel(MODEL_NAME)
+        response = model.generate_content(contents=contents)
         reply = response.text
 
         current_conversation.append({'query': query, 'response': reply})
@@ -164,15 +161,16 @@ def load_chat():
     except Exception as e:
         return jsonify({'error': f'Error loading chat: {str(e)}'}), 500
 
-# Optional route to list available models (for debugging)
-# @app.route('/list_models')
-# def list_models():
-#     try:
-#         for model_info in genai.list_models():
-#             print(model_info)
-#         return "Models listed in console"
-#     except Exception as e:
-#         return f"Error listing models: {e}"
+# ✅ Optional route to list available models
+@app.route('/list_models')
+def list_models():
+    try:
+        models = list(genai.list_models())
+        for model_info in models:
+            print(model_info.name)
+        return "Available models listed in console"
+    except Exception as e:
+        return f"Error listing models: {e}"
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
