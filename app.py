@@ -112,15 +112,18 @@ def ask():
     if not query.strip():
         return jsonify({'error': 'Please enter a question', 'is_error': True})
     try:
-        messages = [
-            {"role": "user", "parts": [part["content"]]} if msg["role"] == "user" else {"role": "model", "parts": [part["content"]]}
-            for msg in [
-                {"role": "system", "content": """You are a helpful AI assistant. When the user asks for a comparison, present the information in a Markdown table."""},
-                *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
-                  for i, msg in enumerate(current_conversation[-3:])],
-                {"role": "user", "content": query}
-            ]
-        ]
+        messages = []
+        for msg in [
+            {"role": "system", "content": """You are a helpful AI assistant. When the user asks for a comparison, present the information in a Markdown table."""},
+            *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
+              for i, msg in enumerate(current_conversation[-3:])],
+            {"role": "user", "content": query}
+        ]:
+            if "parts" in msg:
+                messages.append({"role": msg["role"], "parts": msg["parts"]})
+            elif "content" in msg:
+                messages.append({"role": msg["role"], "parts": [{"text": msg["content"]}]})
+
 
         response = genai.chat(
             model=MODEL_NAME,
