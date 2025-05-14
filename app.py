@@ -14,7 +14,7 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
 # Gemini AI API configuration
-GEMINI_API_KEY = "AIzaSyCriLYjFnFwJ8rzjG7r358Ef_7ENsP-jLc"  # Replace with your actual Gemini API key
+GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE"  # Replace with your actual Gemini API key
 MODEL_NAME = "gemini-pro"  # Or "gemini-pro-vision" for multimodal
 
 # Initialize Gemini API
@@ -113,22 +113,20 @@ def ask():
     if not query.strip():
         return jsonify({'error': 'Please enter a question', 'is_error': True})
     try:
-        messages = []
+        contents = []
         for msg in [
             {"role": "system", "content": """You are a helpful AI assistant. When the user asks for a comparison, present the information in a Markdown table."""},
             *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
               for i, msg in enumerate(current_conversation[-3:])],
             {"role": "user", "content": query}
         ]:
-            if msg["role"] == "system":
-                messages.append({"role": "system", "content": msg["content"]})
-            elif msg["role"] == "user":
-                messages.append({"role": "user", "content": msg["content"]})
-            elif msg["role"] == "assistant":
-                messages.append({"role": "model", "content": msg["content"]})
+            contents.append({
+                "role": msg["role"],
+                "parts": [{"text": msg["content"]}]
+            })
 
         response = model.generate_content(
-            contents=messages
+            contents=contents
         )
         reply = response.text
 
