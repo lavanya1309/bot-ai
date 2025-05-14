@@ -26,7 +26,6 @@ safety_settings = [
     {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
     {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
 ]
-model = genai.GenerativeModel(MODEL_NAME, generation_config=generation_config, safety_settings=safety_settings)
 
 # Directory to store chat history
 CHAT_HISTORY_DIR = "chat_history"
@@ -125,6 +124,7 @@ def ask():
                 "parts": [{"text": msg["content"]}]
             })
 
+        model = genai.GenerativeModel("gemini-pro")  # Explicitly use "gemini-pro" here
         response = model.generate_content(
             contents=contents
         )
