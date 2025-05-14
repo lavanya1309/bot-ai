@@ -48,15 +48,19 @@ def get_last_day_chats():
                 history = load_chat_history(filename)
                 if history:
                     summary = history[0]['query'][:50] + "..." if len(history[0]['query']) > 50 else history[0]['query']
-                    last_day_chats.append({'filename': filename, 'summary': summary, 'timestamp': chat_time.strftime("%H:%M")})
+                    last_day_chats.append({
+                        'filename': filename,
+                        'summary': summary,
+                        'timestamp': chat_time.strftime("%H:%M")
+                    })
         except ValueError:
             continue
     return last_day_chats
 
 def format_code_blocks(text):
     def replace(match):
+        language = match.group(1) or 'python'
         code = match.group(2)
-        language = match.group(1) if match.group(1) else 'python'
         try:
             lexer = get_lexer_by_name(language)
         except:
@@ -64,58 +68,33 @@ def format_code_blocks(text):
         formatter = HtmlFormatter(style='monokai')
         highlighted_code = highlight(code, lexer, formatter)
         return f'<div class="code-block"><pre><code class="{language}">{highlighted_code}</code></pre></div>'
+    
     pattern = re.compile(r'```(\w+)?\n(.*?)\n```', re.DOTALL)
     return re.sub(pattern, replace, text)
 
 def format_tables(text):
-    # First fix completely broken tables (multiple | | cases)
+    # Fix malformed tables
     text = re.sub(r'\|\s*\|\s*\|', '| --- | --- |', text)
-    
-    # Fix tables with missing headers
-    text = re.sub(
-        r'(\|.*\|)\s*(\|.*\|)',
-        lambda m: f"{m.group(1)}\n| {' | '.join(['---']*len(m.group(1).split('|'))[1:-1])} |\n{m.group(2)}",
-        text
-    )
-    
-    # Convert to proper HTML tables
+
     def process_table(match):
         rows = [row.strip() for row in match.group(0).split('\n') if row.strip() and '---' not in row]
         if len(rows) < 2:
             return match.group(0)
-        
-        # Process headers
+
         headers = [h.strip() for h in rows[0].split('|') if h.strip()]
         html = '<div class="table-container"><table class="comparison-table"><thead><tr>'
         html += ''.join(f'<th>{header}</th>' for header in headers) + '</tr></thead><tbody>'
-        
-        # Process data rows
+
         for row in rows[1:]:
             cells = [c.strip() for c in row.split('|') if c.strip()]
             if len(cells) == len(headers):
                 html += '<tr>' + ''.join(f'<td>{cell}</td>' for cell in cells) + '</tr>'
-        
-        return html + '</tbody></table></div>'
-    
-    # Find and convert all tables
+
+        html += '</tbody></table></div>'
+        return html
+
     text = re.sub(r'(\|.*\|.*\n)(\|.*\|\n)*', process_table, text)
-    
     return text
-
-@app.route('/get_last_day_chats', methods=['GET'])
-def get_last_day_chats_ajax():
-    chats = get_last_day_chats()
-    return jsonify(chats)
-
-@app.route('/delete_chat', methods=['POST'])
-def delete_chat():
-    filename = request.form['filename']
-    filepath = os.path.join(CHAT_HISTORY_DIR, filename)
-    try:
-        os.remove(filepath)
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 @app.route('/')
 def index():
@@ -134,7 +113,7 @@ def ask():
     query = request.form['query']
     if not query.strip():
         return jsonify({'error': 'Please enter a question'})
-    
+
     system_prompt = """When comparing services, provide a Markdown table with:
 1. Clear headers in first row
 2. Alignment markers in second row (|:---|:---:|)
@@ -143,8 +122,10 @@ def ask():
 
     messages = [
         {"role": "system", "content": system_prompt},
-        *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
-          for i, msg in enumerate(current_conversation[-3:])],
+        *[
+            {"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
+            for i, msg in enumerate(current_conversation[-3:])
+        ],
         {"role": "user", "content": query}
     ]
 
@@ -163,15 +144,14 @@ def ask():
         )
         response.raise_for_status()
         reply = response.json()['choices'][0]['message']['content']
-        
         current_conversation.append({'query': query, 'response': reply})
-        
+
         formatted_reply = markdown.markdown(reply)
         formatted_reply = format_code_blocks(formatted_reply)
         formatted_reply = format_tables(formatted_reply)
-        
+
         return jsonify({'response': formatted_reply})
-        
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -186,8 +166,8 @@ def new_chat():
 @app.route('/load_chat', methods=['POST'])
 def load_chat():
     filename = request.form['filename']
+    global current_conversation
     try:
-        global current_conversation
         current_conversation = load_chat_history(filename)
         formatted_history = []
         for item in current_conversation:
@@ -197,6 +177,21 @@ def load_chat():
             formatted_response = format_tables(formatted_response)
             formatted_history.append({'query': formatted_query, 'response': formatted_response})
         return jsonify({'success': True, 'conversation': formatted_history})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get_last_day_chats', methods=['GET'])
+def get_last_day_chats_ajax():
+    chats = get_last_day_chats()
+    return jsonify(chats)
+
+@app.route('/delete_chat', methods=['POST'])
+def delete_chat():
+    filename = request.form['filename']
+    filepath = os.path.join(CHAT_HISTORY_DIR, filename)
+    try:
+        os.remove(filepath)
+        return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
