@@ -3,67 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>onestart.ai</title>
+    <title>Groq AI Chat</title>
     <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
+    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css)">
+    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/monokai.min.css](https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/monokai.min.css)">
 </head>
 <body>
     <div class="app-container">
         <div class="left-sidebar">
-            <header class="app-header-left">
-                <h1><i class="fas fa-robot"></i>Onestart AI Assistant</h1>
-                <p class="subtitle">Ask me anything, and I'll help you</p>
-            </header>
-            <button id="newChatBtn" class="new-chat-button">
-                <i class="fas fa-plus-circle"></i> New Chat
-            </button>
+            <div class="app-header-left">
+                <h1>Groq AI Chat</h1>
+                <p class="subtitle">Powered by Llama 3</p>
+            </div>
+            <button id="newChatBtn" class="new-chat-button"><i class="fas fa-plus"></i> New Chat</button>
             <div class="previous-chats-container">
-                <h3>Previous Chats (Last 24 Hours)</h3>
+                <h3>Previous Chats</h3>
                 <ul id="previousChatsList">
+                    {% if previous_chats %}
                     {% for chat in previous_chats %}
-                        <li data-filename="{{ chat.filename }}" class="previous-chat-item">
-                            {{ chat.summary }} <span class="chat-time">({{ chat.timestamp }})</span>
-                        </li>
+                    <li class="previous-chat-item" data-filename="{{ chat.filename }}">
+                        {{ chat.summary }} <span class="chat-time">({{ chat.timestamp }})</span>
+                        <button class="delete-chat-btn" data-filename="{{ chat.filename }}"><i class="fas fa-trash-alt"></i></button>
+                    </li>
                     {% else %}
-                        <li>No recent chats</li>
+                    <li>No recent chats</li>
                     {% endfor %}
+                    {% endif %}
                 </ul>
             </div>
         </div>
         <div class="chat-area">
-            <div class="chat-container" id="chatContainer">
-                {% for item in conversation %}
-                    <div class="message {% if item.is_error %}error{% endif %}">
-                        <div class="user-message">
-                            <div class="avatar"><i class="fas fa-user"></i></div>
-                            <div class="content">{{ item.query|safe }}</div>
-                        </div>
-                        <div class="ai-message">
-                            <div class="avatar"><i class="fas fa-robot"></i></div>
-                            <div class="content">{{ item.response|safe }}</div>
+            <div id="chatContainer" class="chat-container">
+                {% if conversation %}
+                {% for message in conversation %}
+                <div class="message">
+                    <div class="user-message">
+                        <div class="avatar"><i class="fas fa-user"></i></div>
+                        <div class="content">{{ message.query }}</div>
+                        <div class="message-actions">
+                            <button class="edit-button" data-message-type="user" data-message-index="{{ loop.index0 }}"><i class="fas fa-edit"></i></button>
                         </div>
                     </div>
+                    <div class="ai-message">
+                        <div class="avatar"><i class="fas fa-robot"></i></div>
+                        <div class="content">{{ message.response | safe }}</div>
+                        <div class="message-actions">
+                            <button class="copy-button" data-code="{{ message.response | striptags }}"><i class="fas fa-copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
                 {% endfor %}
+                {% endif %}
             </div>
             <form id="queryForm" class="query-form">
                 <div class="input-group">
-                    <input type="text" id="queryInput" placeholder="Ask your question..." required>
-                    <button type="submit" id="submitBtn">
-                        <i class="fas fa-paper-plane"></i> Send
-                    </button>
+                    <input type="text" id="queryInput" placeholder="Ask me anything...">
+                    <button type="submit" id="submitBtn"><i class="fas fa-paper-plane"></i> Send</button>
                 </div>
                 <div class="suggestions">
-                    <span>Try asking:</span>
-                    <button type="button" class="suggestion-btn">How to install Python?</button>
-                    <button type="button" class="suggestion-btn">Fix 'ModuleNotFoundError'</button>
-                    <button type="button" class="suggestion-btn">Explain machine learning</button>
-                </div>
+                    </div>
             </form>
         </div>
     </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="[https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js](https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js)"></script>
     <script src="/static/js/script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
