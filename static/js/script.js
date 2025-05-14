@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="avatar"><i class="fas fa-robot"></i></div>
                     <div class="content">${formattedMessage}</div>
                     <div class="message-actions">
-                        <button class="copy-text-button" data-text="${message.replace(/<[^>]*>?/gm, '')}"><i class="fas fa-copy"></i> Copy</button>
+                        <button class="copy-text-button" data-text="${message.replace(/<[^>]*>?/gm, '').replace(/\n/g, '&#10;') }}"><i class="fas fa-copy"></i> Copy</button>
                     </div>
                 </div>
             `;
@@ -183,6 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
         chatContainer.appendChild(messageDiv);
         attachCopyEventListeners();
         attachEditEventListeners(); // Ensure edit listeners are attached to new messages
+        chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to the bottom after adding a message
     }
 
     function attachCopyEventListeners() {
@@ -279,7 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div class="avatar"><i class="fas fa-robot"></i></div>
                                     <div class="content">${item.response}</div>
                                     <div class="message-actions">
-                                        <button class="copy-text-button" data-text="${item.response.replace(/<[^>]*>?/gm, '')}"><i class="fas fa-copy"></i> Copy</button>
+                                        <button class="copy-text-button" data-text="${item.response.replace(/<[^>]*>?/gm, '').replace(/\n/g, '&#10;') }}"><i class="fas fa-copy"></i> Copy</button>
                                     </div>
                                 </div>
                             `;
