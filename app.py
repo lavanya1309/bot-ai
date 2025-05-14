@@ -114,7 +114,21 @@ For example, if the user asks "What is the difference between X and Y?", your re
 | Feature 2 | Description of X's Feature 2 | Description of Y's Feature 2 |
 | ... | ... | ... |
 
-Specifically, when asked for the difference between AWS and Azure cloud services, provide a detailed comparison in a Markdown table with clear categories like 'Compute', 'Storage', 'Database', etc., and list the corresponding services for each platform in the respective columns.
+Specifically, when asked for the difference between AWS and Azure cloud services, provide a detailed comparison in the following Markdown table format:
+
+| Category | AWS Service | Azure Service |
+|---|---|---|
+| Compute | EC2 | Virtual Machines |
+| Container Service | ECS, EKS | Azure Container Service (ACS), AKS |
+| Serverless | Lambda | Azure Functions |
+| Database (Relational) | RDS | Azure Database for MySQL/PostgreSQL/SQL Server |
+| Database (NoSQL) | DynamoDB | Azure Cosmos DB |
+| Storage (Object) | S3 | Blob Storage |
+| Storage (Block) | EBS | Azure Disk Storage |
+| Identity Management | IAM | Azure Active Directory (AAD) |
+| Network | VPC | Azure Virtual Network (VNet) |
+| AI/ML | SageMaker | Azure Machine Learning |
+| ... | ... | ... |
 
 For other types of questions that do not involve comparison, follow the previous instructions for code blocks and explanations."""},
             *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
