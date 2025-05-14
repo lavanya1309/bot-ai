@@ -383,33 +383,39 @@ button:hover {
 }
 
 
-/* Add this to your existing style.css */
+/* Add these styles to your existing style.css */
+
+/* Table Styles */
 .comparison-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 15px 0;
-    font-size: 0.9em;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
+    font-size: 0.95em;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border-radius: 8px;
 }
 
 .comparison-table thead tr {
     background-color: var(--primary-color);
     color: white;
     text-align: left;
+    font-weight: bold;
 }
 
 .comparison-table th,
 .comparison-table td {
     padding: 12px 15px;
-    border: 1px solid #ddd;
+    border: 1px solid #e0e0e0;
 }
 
 .comparison-table tbody tr {
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #e0e0e0;
+    transition: all 0.2s ease;
 }
 
 .comparison-table tbody tr:nth-of-type(even) {
-    background-color: #f3f3f3;
+    background-color: #f8f9fa;
 }
 
 .comparison-table tbody tr:last-of-type {
@@ -417,5 +423,37 @@ button:hover {
 }
 
 .comparison-table tbody tr:hover {
-    background-color: #f1f1f1;
+    background-color: #f1f3f5;
+    transform: translateX(2px);
 }
+
+/* Responsive tables */
+@media screen and (max-width: 768px) {
+    .comparison-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+}
+
+/* Message container adjustments for tables */
+.ai-message .content table {
+    margin: 15px 0;
+    max-width: 100%;
+}
+
+/* Code block and table spacing */
+.code-block + .comparison-table,
+.comparison-table + .code-block {
+    margin-top: 25px;
+}
+
+/* Table caption styling */
+.comparison-table caption {
+    font-size: 0.9em;
+    color: var(--dark-gray);
+    margin-bottom: 10px;
+    text-align: left;
+    font-style: italic;
+}
+
