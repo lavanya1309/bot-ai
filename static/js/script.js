@@ -166,6 +166,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
             });
+            // LOG THE RAW MESSAGE HERE TO INSPECT ITS CONTENT
+            console.log("Raw AI Message:", message);
             messageDiv.innerHTML = `
                 <div class="ai-message">
                     <div class="avatar"><i class="fas fa-robot"></i></div>
@@ -184,21 +186,27 @@ document.addEventListener('DOMContentLoaded', function() {
         const copyButtons = document.querySelectorAll('.copy-button, .copy-answer-btn');
         copyButtons.forEach(button => {
             button.addEventListener('click', function() {
-                // This is where the copy action happens
-                const textToCopy = this.dataset.code ? decodeURIComponent(this.dataset.code) : this.dataset.text;
-                const originalHTML = this.innerHTML; // Store original HTML to preserve icon
+                let textToCopy = '';
+                if (this.dataset.code) {
+                    textToCopy = decodeURIComponent(this.dataset.code);
+                } else if (this.dataset.text) {
+                    textToCopy = this.dataset.text;
+                }
+                // LOG THE VALUE BEING ATTEMPTED TO COPY
+                console.log('Attempting to copy:', textToCopy);
+                const originalHTML = this.innerHTML;
                 navigator.clipboard.writeText(textToCopy)
                     .then(() => {
                         this.innerHTML = 'Copied!';
                         setTimeout(() => {
-                            this.innerHTML = originalHTML; // Revert to original HTML
+                            this.innerHTML = originalHTML;
                         }, 1500);
                     })
                     .catch(err => {
                         console.error('Failed to copy text: ', err);
-                        this.innerHTML = 'Error'; // Indicate an error visually
+                        this.innerHTML = 'Error';
                         setTimeout(() => {
-                            this.innerHTML = originalHTML; // Revert to original HTML
+                            this.innerHTML = originalHTML;
                         }, 1500);
                     });
                 });
