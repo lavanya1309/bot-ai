@@ -68,31 +68,39 @@ def format_code_blocks(text):
     return re.sub(pattern, replace, text)
 
 def format_tables(text):
-    # First fix malformed Markdown tables
-    text = re.sub(r'---\n(.*?)\n---', r'\1', text)  # Remove --- lines
-    text = re.sub(r'(\w+)\s*\|\s*(\w+)\s*---', r'| \1 | \2 |\n|:---|:---|', text)  # Fix header format
+    # Fix tables without proper spacing (e.g., "FeatureDockerKubernetes")
+    text = re.sub(
+        r'([a-zA-Z])([A-Z][a-z]+)([A-Z][a-z]+)',
+        r'\1 | \2 | \3 |',
+        text
+    )
     
-    # Convert Markdown to HTML tables
-    def markdown_to_html(match):
-        rows = [row.strip() for row in match.group(0).split('\n') if row.strip()]
-        if len(rows) < 2:
-            return match.group(0)
-        
-        # Process headers
-        headers = [h.strip() for h in rows[0].split('|') if h.strip()]
-        html = '<div class="table-container"><table class="comparison-table"><thead><tr>'
-        html += ''.join(f'<th>{header}</th>' for header in headers) + '</tr></thead><tbody>'
-        
-        # Process rows
-        for row in rows[2:]:
-            cells = [c.strip() for c in row.split('|') if c.strip()]
-            if len(cells) == len(headers):
-                html += '<tr>' + ''.join(f'<td>{cell}</td>' for cell in cells) + '</tr>'
-        
-        return html + '</tbody></table></div>'
+    # Convert to proper Markdown table format
+    text = re.sub(
+        r'([^|]+)\|([^|]+)\|([^|]+)\|',
+        lambda m: f"| {m.group(1).strip()} | {m.group(2).strip()} | {m.group(3).strip()} |\n",
+        text
+    )
     
-    # Find and convert Markdown tables
-    text = re.sub(r'(\|.*\|.*\n\|.*\|\n(\|.*\|\n)*)', markdown_to_html, text)
+    # Add header separator if missing
+    if "|---" not in text:
+        text = re.sub(
+            r'(\|.*\|.*\n)',
+            r'\1|:---|:---|:---|\n',
+            text,
+            count=1
+        )
+    
+    # Convert Markdown to HTML
+    text = markdown.markdown(text, extensions=['tables'])
+    
+    # Add table container and styling
+    text = re.sub(
+        r'<table>',
+        '<div class="table-container"><table class="comparison-table">',
+        text
+    )
+    text = re.sub(r'</table>', '</table></div>', text)
     
     return text
 
