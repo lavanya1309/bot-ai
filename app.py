@@ -68,34 +68,31 @@ def format_code_blocks(text):
     return re.sub(pattern, replace, text)
 
 def format_tables(text):
-    # Fix malformed Markdown tables (missing header separators)
-    text = re.sub(r'(\|.*\|)\s*(\|.*\|)', r'\1\n| --- | --- |\n\2', text)
+    # First fix malformed Markdown tables
+    text = re.sub(r'---\n(.*?)\n---', r'\1', text)  # Remove --- lines
+    text = re.sub(r'(\w+)\s*\|\s*(\w+)\s*---', r'| \1 | \2 |\n|:---|:---|', text)  # Fix header format
     
-    # Convert Markdown tables to HTML
-    text = re.sub(
-        r'\|(.*?)\|\s*\|\s*---\s*\|\s*---\s*\|\s*\|(.*?)\|',
-        lambda m: f'<table><thead><tr><th>{m.group(1)}</th><th>{m.group(2)}</th></tr></thead><tbody>',
-        text,
-        flags=re.DOTALL
-    )
+    # Convert Markdown to HTML tables
+    def markdown_to_html(match):
+        rows = [row.strip() for row in match.group(0).split('\n') if row.strip()]
+        if len(rows) < 2:
+            return match.group(0)
+        
+        # Process headers
+        headers = [h.strip() for h in rows[0].split('|') if h.strip()]
+        html = '<div class="table-container"><table class="comparison-table"><thead><tr>'
+        html += ''.join(f'<th>{header}</th>' for header in headers) + '</tr></thead><tbody>'
+        
+        # Process rows
+        for row in rows[2:]:
+            cells = [c.strip() for c in row.split('|') if c.strip()]
+            if len(cells) == len(headers):
+                html += '<tr>' + ''.join(f'<td>{cell}</td>' for cell in cells) + '</tr>'
+        
+        return html + '</tbody></table></div>'
     
-    # Add remaining rows
-    text = re.sub(
-        r'\|(.*?)\|\s*\|(.*?)\|',
-        lambda m: f'<tr><td>{m.group(1)}</td><td>{m.group(2)}</td></tr>',
-        text
-    )
-    
-    # Close the table
-    text = re.sub(r'<\/tbody>', '</tbody></table>', text)
-    
-    # Add proper table containers and styling
-    text = re.sub(
-        r'<table>',
-        '<div class="table-container"><table class="comparison-table">',
-        text
-    )
-    text = re.sub(r'</table>', '</table></div>', text)
+    # Find and convert Markdown tables
+    text = re.sub(r'(\|.*\|.*\n\|.*\|\n(\|.*\|\n)*)', markdown_to_html, text)
     
     return text
 
