@@ -1,3 +1,4 @@
+// static/js/script.js
 document.addEventListener('DOMContentLoaded', function() {
     const newChatBtn = document.getElementById('newChatBtn');
     const chatContainer = document.getElementById('chatContainer');
@@ -37,19 +38,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 li.textContent = 'No recent chats';
                 previousChatsList.appendChild(li);
             }
-            attachDeleteChatListeners(); // Attach listeners after updating the list
+            attachDeleteEventListeners(); // Attach listeners after updating the list
         } catch (error) {
             console.error('Error updating previous chats:', error);
         }
     }
 
-    function attachDeleteChatListeners() {
+    function attachDeleteEventListeners() {
         const deleteButtons = document.querySelectorAll('.delete-chat-btn');
         deleteButtons.forEach(button => {
             button.addEventListener('click', async function(event) {
                 event.stopPropagation(); // Prevent loading the chat when delete is clicked
                 const filename = this.dataset.filename;
-                if (confirm(`Are you sure you want to delete chat "${filename}"?`)) {
+                if (confirm(`Are you sure you want to delete chat: ${filename}?`)) {
                     try {
                         const response = await fetch('/delete_chat', {
                             method: 'POST',
@@ -60,14 +61,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                         if (!response.ok) {
                             console.error('Error deleting chat:', response.status, await response.text());
+                            alert('Error deleting chat.');
                             return;
                         }
                         const data = await response.json();
                         if (data.success) {
                             await updatePreviousChats(); // Refresh the list after deletion
                         } else {
-                            console.error('Error deleting chat:', data.error);
-                            alert(`Error deleting chat: ${data.error}`);
+                            alert(data.error);
                         }
                     } catch (error) {
                         console.error('Fetch error deleting chat:', error);
@@ -101,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
         event.preventDefault();
         const query = queryInput.value.trim();
         if (query) {
-            appendMessage('user', query); // Append user message immediately
+            appendMessage('user', query, true); // Indicate it's a new user message
             queryInput.value = '';
             submitBtn.disabled = true;
             queryInput.disabled = true;
@@ -116,52 +117,50 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: `query=${encodeURIComponent(query)}`
                 });
 
-                if (!response.ok) {
-                    console.error('API error:', response.status);
-                    appendMessage('ai', 'Error communicating with the AI.');
-                    return;
-                }
+        if (!response.ok) {
+                        console.error('API error:', response.status);
+                        appendMessage('ai', 'Error communicating with the AI.');
+                        return;
+                    }
 
-                const data = await response.json();
-                if (data.is_error) {
-                    appendMessage('ai', data.error);
-                } else {
-                    appendMessage('ai', data.response);
+                    const data = await response.json();
+                    if (data.is_error) {
+                        appendMessage('ai', data.error);
+                    } else {
+                        appendMessage('ai', data.response);
+                    }
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    appendMessage('ai', 'An error occurred while processing your request.');
+                } finally {
+                    submitBtn.disabled = false;
+                    queryInput.disabled = false;
+                    queryInput.focus();
+                    document.querySelectorAll('pre code').forEach((block) => {
+                        hljs.highlightElement(block);
+                    });
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
                 }
-            } catch (error) {
-                console.error('Fetch error:', error);
-                appendMessage('ai', 'An error occurred while processing your request.');
-            } finally {
-                submitBtn.disabled = false;
-                queryInput.disabled = false;
-                queryInput.focus();
-                document.querySelectorAll('pre code').forEach((block) => {
-                    hljs.highlightElement(block);
-                });
-                chatContainer.scrollTop = chatContainer.scrollHeight;
             }
-        }
-    });
+        });
 
-    function appendMessage(sender, message) {
+    function appendMessage(sender, message, isNewUserMessage = false) {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message';
         let contentDiv;
-        let actionsDiv = '';
-
         if (sender === 'user') {
+            const userContent = `<div class="content">${message}</div>`;
+            const editButton = `<div class="edit-button-container"><button class="edit-button" data-message-type="user" data-message-text="${encodeURIComponent(message)}"><i class="fas fa-edit"></i></button></div>`;
             messageDiv.innerHTML = `
                 <div class="user-message">
                     <div class="avatar"><i class="fas fa-user"></i></div>
-                    <div class="content">${message}</div>
-                    <div class="message-actions">
-                        <button class="edit-button" data-message-type="user" data-message-index="${chatContainer.children.length}"><i class="fas fa-edit"></i></button>
-                    </div>
+                    ${userContent}
+                    ${editButton}
                 </div>
             `;
         } else if (sender === 'ai') {
             let formattedMessage = message;
-            formattedMessage = formattedMessage.replace(/<div class="code-block"><pre><code class="([^"]*)">([\s\S]*?)<\/code><\/pre><button class="copy-button" data-code="([\s\S]*?)"><i class="fas fa-copy"></i> Copy<\/button><\/div>/g, (match, language, code) => {
+            formattedMessage = formattedMessage.replace(/<div class="code-block"><pre><code class="([^"]*)">([\s\S]*?)<\/code><\/pre><\/div>/g, (match, language, code) => {
                 const escapedCode = code.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
                 return `
                     <div class="code-block">
@@ -174,24 +173,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="ai-message">
                     <div class="avatar"><i class="fas fa-robot"></i></div>
                     <div class="content">${formattedMessage}</div>
-                    <div class="message-actions">
-                        <button class="copy-text-button" data-text="${message.replace(/<[^>]*>?/gm, '').replace(/\n/g, '&#10;') }}"><i class="fas fa-copy"></i> Copy</button>
+                    <div class="copy-button-container">
+                        <button class="copy-answer-btn" data-text="${message.replace(/<[^>]*>?/gm, '').trim()}"><i class="fas fa-copy"></i> Copy</button>
                     </div>
                 </div>
             `;
         }
         chatContainer.appendChild(messageDiv);
         attachCopyEventListeners();
-        attachEditEventListeners(); // Ensure edit listeners are attached to new messages
-        chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to the bottom after adding a message
+        attachEditEventListeners();
     }
 
     function attachCopyEventListeners() {
-        const copyButtons = document.querySelectorAll('.copy-button, .copy-text-button');
+        const copyButtons = document.querySelectorAll('.copy-button, .copy-answer-btn');
         copyButtons.forEach(button => {
             button.addEventListener('click', function() {
-                const code = this.dataset.code || this.dataset.text;
-                navigator.clipboard.writeText(code)
+                const textToCopy = this.dataset.code ? decodeURIComponent(this.dataset.code) : this.dataset.text;
+                navigator.clipboard.writeText(textToCopy)
                     .then(() => {
                         this.textContent = 'Copied!';
                         setTimeout(() => {
@@ -214,32 +212,35 @@ document.addEventListener('DOMContentLoaded', function() {
         editButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const messageDiv = this.closest('.message');
-                const contentType = this.dataset.messageType;
-                const contentElement = messageDiv.querySelector(`.${contentType}-message .content`);
-                const originalText = contentElement.textContent.trim();
-
-                contentElement.innerHTML = `
-                    <div class="edit-input-area">
-                        <textarea class="edit-input">${originalText}</textarea>
-                        <div class="edit-actions">
-                            <button class="save-edit-btn">Save</button>
-                            <button class="cancel-edit-btn">Cancel</button>
-                        </div>
+                const contentDiv = messageDiv.querySelector('.user-message .content');
+                const originalText = decodeURIComponent(this.dataset.messageText);
+                contentDiv.innerHTML = `
+                    <textarea class="edit-textarea">${originalText}</textarea>
+                    <div class="edit-controls">
+                        <button class="save-edit-btn">Save</button>
+                        <button class="cancel-edit-btn">Cancel</button>
                     </div>
                 `;
+                const textarea = contentDiv.querySelector('.edit-textarea');
+                textarea.focus();
 
-                const saveBtn = contentElement.querySelector('.save-edit-btn');
-                const cancelBtn = contentElement.querySelector('.cancel-edit-btn');
-                const editTextarea = contentElement.querySelector('.edit-input');
+                const saveButton = contentDiv.querySelector('.save-edit-btn');
+                const cancelButton = contentDiv.querySelector('.cancel-edit-btn');
 
-                saveBtn.addEventListener('click', function() {
-                    contentElement.innerHTML = editTextarea.value;
-                    attachEditEventListeners(); // Re-attach listeners after edit
+                saveButton.addEventListener('click', function() {
+                    const newText = textarea.value.trim();
+                    if (newText) {
+                        contentDiv.innerHTML = newText + `<div class="edit-button-container"><button class="edit-button" data-message-type="user" data-message-text="${encodeURIComponent(newText)}"><i class="fas fa-edit"></i></button></div>`;
+                        // Optionally, you might want to resend the edited query to the bot
+                    } else {
+                        contentDiv.innerHTML = originalText + `<div class="edit-button-container"><button class="edit-button" data-message-type="user" data-message-text="${encodeURIComponent(originalText)}"><i class="fas fa-edit"></i></button></div>`;
+                    }
+                    attachEditEventListeners(); // Re-attach listeners after editing
                 });
 
-                cancelBtn.addEventListener('click', function() {
-                    contentElement.innerHTML = originalText;
-                    attachEditEventListeners(); // Re-attach listeners after cancel
+                cancelButton.addEventListener('click', function() {
+                    contentDiv.innerHTML = originalText + `<div class="edit-button-container"><button class="edit-button" data-message-type="user" data-message-text="${encodeURIComponent(originalText)}"><i class="fas fa-edit"></i></button></div>`;
+                    attachEditEventListeners(); // Re-attach listeners after canceling
                 });
             });
         });
@@ -248,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (previousChatsList) {
         previousChatsList.addEventListener('click', async function(event) {
             const listItem = event.target.closest('.previous-chat-item');
-            if (listItem && !event.target.classList.contains('delete-chat-btn')) {
+            if (listItem && !event.target.classList.contains('delete-chat-btn') && !event.target.closest('.delete-chat-btn')) {
                 const filename = listItem.dataset.filename;
                 try {
                     const response = await fetch('/load_chat', {
@@ -272,15 +273,15 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class="user-message">
                                     <div class="avatar"><i class="fas fa-user"></i></div>
                                     <div class="content">${item.query}</div>
-                                    <div class="message-actions">
-                                        <button class="edit-button" data-message-type="user" data-message-index="${chatContainer.children.length}"><i class="fas fa-edit"></i></button>
+                                    <div class="edit-button-container">
+                                        <button class="edit-button" data-message-type="user" data-message-text="${encodeURIComponent(item.query)}"><i class="fas fa-edit"></i></button>
                                     </div>
                                 </div>
                                 <div class="ai-message">
                                     <div class="avatar"><i class="fas fa-robot"></i></div>
                                     <div class="content">${item.response}</div>
-                                    <div class="message-actions">
-                                        <button class="copy-text-button" data-text="${item.response.replace(/<[^>]*>?/gm, '').replace(/\n/g, '&#10;') }}"><i class="fas fa-copy"></i> Copy</button>
+                                    <div class="copy-button-container">
+                                        <button class="copy-answer-btn" data-text="${item.response.replace(/<[^>]*>?/gm, '').trim()}"><i class="fas fa-copy"></i> Copy</button>
                                     </div>
                                 </div>
                             `;
@@ -289,9 +290,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         document.querySelectorAll('pre code').forEach((block) => {
                             hljs.highlightElement(block);
                         });
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
                         attachCopyEventListeners();
                         attachEditEventListeners();
-                        chatContainer.scrollTop = chatContainer.scrollHeight;
                     } else {
                         console.error('Error loading chat:', data.error);
                     }
@@ -302,7 +303,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    attachDeleteChatListeners(); // Initial attachment for chats loaded on page load
-    attachCopyEventListeners(); // Initial attachment for chats loaded on page load
-    attachEditEventListeners(); // Initial attachment for chats loaded on page load
+    attachDeleteEventListeners(); // Initial attachment for delete buttons
+    // Initial load of previous chats is handled by the template
 });
