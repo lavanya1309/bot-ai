@@ -383,15 +383,13 @@ button:hover {
 }
 
 
-/* Add these styles to your existing style.css */
-
-/* Enhanced Table Styles */
+/* Table Styles */
 .table-container {
     width: 100%;
     overflow-x: auto;
     margin: 20px 0;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
 .comparison-table {
@@ -402,27 +400,21 @@ button:hover {
 }
 
 .table-header-row {
-    background-color: var(--primary-color);
+    background-color: #4361ee;
     color: white;
 }
 
 .table-header-row th {
     padding: 12px 15px;
     text-align: left;
-    font-weight: 600;
 }
 
 .table-data-row {
     border-bottom: 1px solid #dddddd;
-    transition: all 0.2s ease;
 }
 
 .table-data-row:nth-of-type(even) {
     background-color: #f8f9fa;
-}
-
-.table-data-row:last-of-type {
-    border-bottom: 2px solid var(--primary-color);
 }
 
 .table-data-row:hover {
@@ -431,7 +423,6 @@ button:hover {
 
 .comparison-table td {
     padding: 12px 15px;
-    text-align: left;
     border-right: 1px solid #e0e0e0;
 }
 
@@ -439,12 +430,11 @@ button:hover {
     border-right: none;
 }
 
-/* Responsive adjustments */
+/* Mobile Responsiveness */
 @media (max-width: 768px) {
     .table-container {
-        border-radius: 0;
-        box-shadow: none;
         border: 1px solid #e0e0e0;
+        box-shadow: none;
     }
     
     .comparison-table {
@@ -456,4 +446,3 @@ button:hover {
         padding: 8px 10px;
     }
 }
-
