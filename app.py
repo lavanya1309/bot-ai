@@ -103,7 +103,7 @@ def ask():
         return jsonify({'error': 'Please enter a question', 'is_error': True})
     try:
         messages = [
-            {"role": "system", "content": """You are a highly skilled AI assistant that excels at providing information in structured formats. When the user asks for a comparison or the difference between two or more items, you MUST present the information as a Markdown table.
+            {"role": "system", "content": """You are a highly skilled AI assistant that excels at providing information in structured formats. When the user asks for a comparison or the difference between two or more items, you MUST provide the response as a **Markdown table**.
 
 For example, if the user asks "What is the difference between X and Y?", your response should look like this:
 
@@ -111,26 +111,9 @@ For example, if the user asks "What is the difference between X and Y?", your re
 |---|---|---|
 | Feature 1 | Description of X's Feature 1 | Description of Y's Feature 1 |
 | Feature 2 | Description of X's Feature 2 | Description of Y's Feature 2 |
-| ... | ... | ... |
 
-Specifically, when asked for the difference between AWS and Azure cloud services, provide a detailed comparison in the following Markdown table format:
-
-| Category | AWS Service | Azure Service |
-|---|---|---|
-| Compute | EC2 | Virtual Machines |
-| Container Service | ECS, EKS | Azure Container Service (ACS), AKS |
-| Serverless | Lambda | Azure Functions |
-| Database (Relational) | RDS | Azure Database for MySQL/PostgreSQL/SQL Server |
-| Database (NoSQL) | DynamoDB | Azure Cosmos DB |
-| Storage (Object) | S3 | Blob Storage |
-| Storage (Block) | EBS | Azure Disk Storage |
-| Identity Management | IAM | Azure Active Directory (AAD) |
-| Network | VPC | Azure Virtual Network (VNet) |
-| AI/ML | SageMaker | Azure Machine Learning |
-| ... | ... | ... |
-
-For other types of questions that do not involve comparison, follow the previous instructions for code blocks and explanations."""},
-            *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
+Make sure the response is always in a **Markdown table** format, even if the query is asking about other things, such as products, tools, or services. The response must not be a paragraph or bullet points, but a **table** in Markdown format. If the question is not about a comparison, answer it normally with text and code formatting."""},
+            *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response'] }
               for i, msg in enumerate(current_conversation[-3:])],
             {"role": "user", "content": query}
         ]
@@ -149,24 +132,19 @@ For other types of questions that do not involve comparison, follow the previous
         response = requests.post(GROQ_URL, headers=headers, json=data)
         response.raise_for_status()
         result = response.json()
-        print(f"Groq Response: {result}")
 
         reply = result['choices'][0]['message']['content']
 
-        current_conversation.append({'query': query, 'response': reply})
-
+        # Format the AI reply to ensure it's in a table format (you may already be doing this)
         formatted_reply = format_code_blocks(markdown.markdown(reply))
-        print(f"Flask Response: {jsonify({'response': formatted_reply, 'is_error': False})}")
 
         return jsonify({'response': formatted_reply, 'is_error': False})
 
     except requests.exceptions.RequestException as e:
         error_message = f"API request failed: {str(e)}"
-        print(f"Flask Error (RequestException): {error_message}")
         return jsonify({'error': error_message, 'is_error': True})
     except Exception as e:
         error_message = f"An error occurred: {str(e)}"
-        print(f"Flask Error (General): {error_message}")
         return jsonify({'error': error_message, 'is_error': True})
 
 @app.route('/new_chat', methods=['POST'])
