@@ -1,3 +1,4 @@
+# app.py
 from flask import Flask, render_template, request, jsonify
 import requests
 import re
@@ -65,7 +66,7 @@ def format_code_blocks(text):
             lexer = get_lexer_by_name('text')
         formatter = HtmlFormatter(style='monokai')
         highlighted_code = highlight(code, lexer, formatter)
-        return f'<div class="code-block"><pre><code class="{language}">{highlighted_code}</code></pre><button class="copy-button" data-code="{code}"><i class="fas fa-copy"></i> Copy</button></div>'
+        return f'<div class="code-block"><pre><code class="{language}">{highlighted_code}</code></pre></div>'
     pattern = re.compile(r'```(\w+)?\n(.*?)\n```', re.DOTALL)
     return re.sub(pattern, replace, text)
 
