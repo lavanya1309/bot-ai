@@ -19,7 +19,7 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL = "llama3-70b-8192"
 
 # Directory to store chat history
-CHAT_HISTORY_DIR = "chat_history.json"
+CHAT_HISTORY_DIR = "chat_history"
 os.makedirs(CHAT_HISTORY_DIR, exist_ok=True)
 
 # Store the current conversation
