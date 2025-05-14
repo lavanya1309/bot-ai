@@ -1,4 +1,3 @@
-// static/js/script.js
 document.addEventListener('DOMContentLoaded', function() {
     const newChatBtn = document.getElementById('newChatBtn');
     const chatContainer = document.getElementById('chatContainer');
@@ -179,7 +178,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         chatContainer.appendChild(messageDiv);
         attachCopyEventListeners();
-        // Since the edit button is removed, we no longer need to attach its listeners
     }
 
     function attachCopyEventListeners() {
@@ -197,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     })
                     .catch(err => {
                         console.error('Failed to copy text: ', err);
-                        this.textContent = 'Error';
+                        this.innerHTML = 'Error'; // Indicate an error visually
                         setTimeout(() => {
                             this.innerHTML = originalHTML; // Revert to original HTML
                         }, 1500);
@@ -205,8 +203,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-
-    // The attachEditEventListeners function is no longer needed as the edit button is removed
 
     if (previousChatsList) {
         previousChatsList.addEventListener('click', async function(event) {
@@ -251,7 +247,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                         chatContainer.scrollTop = chatContainer.scrollHeight;
                         attachCopyEventListeners();
-                        // No need to attach edit listeners
                     } else {
                         console.error('Error loading chat:', data.error);
                     }
