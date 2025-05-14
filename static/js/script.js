@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
         event.preventDefault();
         const query = queryInput.value.trim();
         if (query) {
-            appendMessage('user', query, true); // Indicate it's the user's initial message
+            appendMessage('user', query); // Append user message immediately
             queryInput.value = '';
             submitBtn.disabled = true;
             queryInput.disabled = true;
@@ -143,13 +143,165 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    function appendMessage(sender, message, isUserInitial = false) {
+    function appendMessage(sender, message) {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message';
         let contentDiv;
         let actionsDiv = '';
 
         if (sender === 'user') {
-            actionsDiv = `
-                <div class="message-actions">
-                    <button class="edit-button" data-message-type="user"
+            messageDiv.innerHTML = `
+                <div class="user-message">
+                    <div class="avatar"><i class="fas fa-user"></i></div>
+                    <div class="content">${message}</div>
+                    <div class="message-actions">
+                        <button class="edit-button" data-message-type="user" data-message-index="${chatContainer.children.length}"><i class="fas fa-edit"></i></button>
+                    </div>
+                </div>
+            `;
+        } else if (sender === 'ai') {
+            let formattedMessage = message;
+            formattedMessage = formattedMessage.replace(/<div class="code-block"><pre><code class="([^"]*)">([\s\S]*?)<\/code><\/pre><button class="copy-button" data-code="([\s\S]*?)"><i class="fas fa-copy"></i> Copy<\/button><\/div>/g, (match, language, code) => {
+                const escapedCode = code.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+                return `
+                    <div class="code-block">
+                        <pre><code class="${language}">${code}</code></pre>
+                        <button class="copy-button" data-code="${encodeURIComponent(escapedCode)}"><i class="fas fa-copy"></i> Copy</button>
+                    </div>
+                `;
+            });
+            messageDiv.innerHTML = `
+                <div class="ai-message">
+                    <div class="avatar"><i class="fas fa-robot"></i></div>
+                    <div class="content">${formattedMessage}</div>
+                    <div class="message-actions">
+                        <button class="copy-text-button" data-text="${message.replace(/<[^>]*>?/gm, '')}"><i class="fas fa-copy"></i> Copy</button>
+                    </div>
+                </div>
+            `;
+        }
+        chatContainer.appendChild(messageDiv);
+        attachCopyEventListeners();
+        attachEditEventListeners(); // Ensure edit listeners are attached to new messages
+    }
+
+    function attachCopyEventListeners() {
+        const copyButtons = document.querySelectorAll('.copy-button, .copy-text-button');
+        copyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const code = this.dataset.code || this.dataset.text;
+                navigator.clipboard.writeText(code)
+                    .then(() => {
+                        this.textContent = 'Copied!';
+                        setTimeout(() => {
+                            this.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                        }, 1500);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy text: ', err);
+                        this.textContent = 'Error';
+                        setTimeout(() => {
+                            this.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                        }, 1500);
+                    });
+            });
+        });
+    }
+
+    function attachEditEventListeners() {
+        const editButtons = document.querySelectorAll('.edit-button');
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const messageDiv = this.closest('.message');
+                const contentType = this.dataset.messageType;
+                const contentElement = messageDiv.querySelector(`.${contentType}-message .content`);
+                const originalText = contentElement.textContent.trim();
+
+                contentElement.innerHTML = `
+                    <div class="edit-input-area">
+                        <textarea class="edit-input">${originalText}</textarea>
+                        <div class="edit-actions">
+                            <button class="save-edit-btn">Save</button>
+                            <button class="cancel-edit-btn">Cancel</button>
+                        </div>
+                    </div>
+                `;
+
+                const saveBtn = contentElement.querySelector('.save-edit-btn');
+                const cancelBtn = contentElement.querySelector('.cancel-edit-btn');
+                const editTextarea = contentElement.querySelector('.edit-input');
+
+                saveBtn.addEventListener('click', function() {
+                    contentElement.innerHTML = editTextarea.value;
+                    attachEditEventListeners(); // Re-attach listeners after edit
+                });
+
+                cancelBtn.addEventListener('click', function() {
+                    contentElement.innerHTML = originalText;
+                    attachEditEventListeners(); // Re-attach listeners after cancel
+                });
+            });
+        });
+    }
+
+    if (previousChatsList) {
+        previousChatsList.addEventListener('click', async function(event) {
+            const listItem = event.target.closest('.previous-chat-item');
+            if (listItem && !event.target.classList.contains('delete-chat-btn')) {
+                const filename = listItem.dataset.filename;
+                try {
+                    const response = await fetch('/load_chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `filename=${encodeURIComponent(filename)}`
+                    });
+                    if (!response.ok) {
+                        console.error('Error loading chat:', response.status, await response.text());
+                        return;
+                    }
+                    const data = await response.json();
+                    if (data.success) {
+                        chatContainer.innerHTML = '';
+                        data.conversation.forEach(item => {
+                            const messageDiv = document.createElement('div');
+                            messageDiv.className = 'message';
+                            messageDiv.innerHTML = `
+                                <div class="user-message">
+                                    <div class="avatar"><i class="fas fa-user"></i></div>
+                                    <div class="content">${item.query}</div>
+                                    <div class="message-actions">
+                                        <button class="edit-button" data-message-type="user" data-message-index="${chatContainer.children.length}"><i class="fas fa-edit"></i></button>
+                                    </div>
+                                </div>
+                                <div class="ai-message">
+                                    <div class="avatar"><i class="fas fa-robot"></i></div>
+                                    <div class="content">${item.response}</div>
+                                    <div class="message-actions">
+                                        <button class="copy-text-button" data-text="${item.response.replace(/<[^>]*>?/gm, '')}"><i class="fas fa-copy"></i> Copy</button>
+                                    </div>
+                                </div>
+                            `;
+                            chatContainer.appendChild(messageDiv);
+                        });
+                        document.querySelectorAll('pre code').forEach((block) => {
+                            hljs.highlightElement(block);
+                        });
+                        attachCopyEventListeners();
+                        attachEditEventListeners();
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    } else {
+                        console.error('Error loading chat:', data.error);
+                    }
+                } catch (error) {
+                    console.error('Fetch error loading chat:', error);
+                }
+            }
+        });
+    }
+
+    attachDeleteChatListeners(); // Initial attachment for chats loaded on page load
+    attachCopyEventListeners(); // Initial attachment for chats loaded on page load
+    attachEditEventListeners(); // Initial attachment for chats loaded on page load
+});
