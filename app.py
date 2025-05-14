@@ -26,6 +26,7 @@ safety_settings = [
     {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
     {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
 ]
+model = genai.GenerativeModel(MODEL_NAME, generation_config=generation_config, safety_settings=safety_settings)
 
 # Directory to store chat history
 CHAT_HISTORY_DIR = "chat_history"
@@ -119,19 +120,17 @@ def ask():
               for i, msg in enumerate(current_conversation[-3:])],
             {"role": "user", "content": query}
         ]:
-            if "parts" in msg:
-                messages.append({"role": msg["role"], "parts": msg["parts"]})
-            elif "content" in msg:
-                messages.append({"role": msg["role"], "parts": [{"text": msg["content"]}]})
+            if msg["role"] == "system":
+                messages.append({"role": "system", "content": msg["content"]})
+            elif msg["role"] == "user":
+                messages.append({"role": "user", "content": msg["content"]})
+            elif msg["role"] == "assistant":
+                messages.append({"role": "model", "content": msg["content"]})
 
-
-        response = genai.chat(
-            model=MODEL_NAME,
-            messages=messages,
-            generation_config=generation_config,
-            safety_settings=safety_settings
+        response = model.generate_content(
+            contents=messages
         )
-        reply = response.last.text
+        reply = response.text
 
         current_conversation.append({'query': query, 'response': reply})
         formatted_reply = format_code_blocks(markdown.markdown(reply))
