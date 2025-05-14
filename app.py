@@ -1,3 +1,4 @@
+# app.py
 from flask import Flask, render_template, request, jsonify
 import requests
 import re
@@ -5,60 +6,161 @@ import markdown
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name
 from pygments.formatters import HtmlFormatter
+from datetime import datetime, timedelta
+import json
+import os
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
 # Groq AI API configuration
-GROQ_API_KEY = "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"  # Get at console.groq.com
+GROQ_API_KEY = "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"  # Replace with your actual Groq API key
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL = "llama3-70b-8192"
 
-# Store conversation history
-conversation_history = []
+# Directory to store chat history
+CHAT_HISTORY_DIR = "chat_history"
+os.makedirs(CHAT_HISTORY_DIR, exist_ok=True)
+
+# Store the current conversation
+current_conversation = []
+
+def save_chat_history(history):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = os.path.join(CHAT_HISTORY_DIR, f"chat_{timestamp}.json")
+    with open(filename, 'w') as f:
+        json.dump(history, f)
+
+def load_chat_history(filename):
+    filepath = os.path.join(CHAT_HISTORY_DIR, filename)
+    with open(filepath, 'r') as f:
+        return json.load(f)
+
+def get_last_day_chats():
+    now = datetime.now()
+    one_day_ago = now - timedelta(days=1)
+    chat_files = [f for f in os.listdir(CHAT_HISTORY_DIR) if f.startswith("chat_") and f.endswith(".json")]
+    last_day_chats = []
+    for filename in sorted(chat_files, reverse=True):
+        try:
+            timestamp_str = filename[5:-5]
+            chat_time = datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+            if chat_time >= one_day_ago:
+                history = load_chat_history(filename)
+                if history:
+                    summary = history[0]['query'][:50] + "..." if len(history[0]['query']) > 50 else history[0]['query']
+                    last_day_chats.append({'filename': filename, 'summary': summary, 'timestamp': chat_time.strftime("%H:%M")})
+                else:
+                    break
+        except ValueError:
+            continue
+    return last_day_chats
 
 def format_code_blocks(text):
-    """
-    Convert markdown to HTML and highlight code blocks using Pygments
-    """
-    # Convert markdown to HTML
-    html = markdown.markdown(text)
-    
-    # Process code blocks with Pygments
-    def replacer(match):
-        language = match.group(1) or 'text'
+    def replace(match):
         code = match.group(2)
-        
+        language = match.group(1) if match.group(1) else 'python'
         try:
-            lexer = get_lexer_by_name(language, stripall=True)
-            formatter = HtmlFormatter(style='friendly')
-            return highlight(code, lexer, formatter)
+            lexer = get_lexer_by_name(language)
         except:
-            return f'<pre><code>{code}</code></pre>'
+            lexer = get_lexer_by_name('text')
+        formatter = HtmlFormatter(style='monokai')
+        highlighted_code = highlight(code, lexer, formatter)
+        return f'<div class="code-block"><pre><code class="{language}">{highlighted_code}</code></pre></div>'
+    pattern = re.compile(r'```(\w+)?\n(.*?)\n```', re.DOTALL)
+    return re.sub(pattern, replace, text)
+
+def format_tables(text):
+    # Add CSS styling and responsive design to tables
+    text = re.sub(
+        r'<table>',
+        '<div class="table-responsive"><table class="comparison-table">',
+        text
+    )
+    text = re.sub(r'</table>', '</table></div>', text)
     
-    # This pattern matches both ```lang and ``` code blocks
-    html = re.sub(r'```(\w*)\n(.*?)\n```', replacer, html, flags=re.DOTALL)
+    # Add header styling
+    text = re.sub(
+        r'<thead>',
+        '<thead><tr style="background-color: var(--primary-color); color: white;">',
+        text
+    )
     
-    return html
+    # Add hover effects
+    text = re.sub(
+        r'<tbody>',
+        '<tbody style="transition: all 0.2s ease;">',
+        text
+    )
+    
+    # Ensure proper cell padding
+    text = re.sub(
+        r'<td>',
+        '<td style="padding: 12px 15px; border: 1px solid #e0e0e0;">',
+        text
+    )
+    
+    # Add alternating row colors
+    text = re.sub(
+        r'<tr>',
+        '<tr style="border-bottom: 1px solid #e0e0e0;">',
+        text
+    )
+    
+    return text
+
+@app.route('/get_last_day_chats', methods=['GET'])
+def get_last_day_chats_ajax():
+    chats = get_last_day_chats()
+    return jsonify(chats)
+
+@app.route('/delete_chat', methods=['POST'])
+def delete_chat():
+    filename = request.form['filename']
+    filepath = os.path.join(CHAT_HISTORY_DIR, filename)
+    try:
+        os.remove(filepath)
+        return jsonify({'success': True})
+    except FileNotFoundError:
+        return jsonify({'error': 'Chat history not found'}), 404
+    except Exception as e:
+        return jsonify({'error': f'Error deleting chat: {str(e)}'}), 500
 
 @app.route('/')
-def home():
-    """Render the main chat interface"""
-    return render_template('index.html', conversation=conversation_history)
+def index():
+    previous_chats = get_last_day_chats()
+    formatted_history = []
+    for item in current_conversation:
+        formatted_query = markdown.markdown(item['query'])
+        formatted_response = format_code_blocks(markdown.markdown(item['response']))
+        formatted_response = format_tables(formatted_response)
+        formatted_history.append({'query': formatted_query, 'response': formatted_response})
+    return render_template('index.html', conversation=formatted_history, previous_chats=previous_chats)
 
 @app.route('/ask', methods=['POST'])
 def ask():
-    """Handle AI queries"""
     query = request.form['query']
     if not query.strip():
-        return jsonify({'error': 'Please enter a question'})
-    
+        return jsonify({'error': 'Please enter a question', 'is_error': True})
     try:
-        # Prepare messages with conversation history (last 3 exchanges)
+        # Enhanced system prompt for table comparisons
+        system_prompt = """You are a highly skilled AI assistant that excels at providing information in structured formats. 
+When the user asks for a comparison or the difference between two or more items, you MUST present the information as a Markdown table with clear headers.
+
+For comparison questions, use this format:
+| Feature/Category | Item 1 | Item 2 | Item 3 |
+|------------------|--------|--------|--------|
+| Feature 1        | Value  | Value  | Value  |
+| Feature 2        | Value  | Value  | Value  |
+
+Include all relevant comparison points. For technical comparisons, include specific details like performance, pricing, use cases, etc.
+
+For non-comparison questions, provide clear explanations with code examples when appropriate, formatted in Markdown code blocks."""
+
         messages = [
-            {"role": "system", "content": "You are a helpful AI assistant."},
-            *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']} 
-              for i, msg in enumerate(conversation_history[-3:])],
+            {"role": "system", "content": system_prompt},
+            *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
+              for i, msg in enumerate(current_conversation[-3:])],
             {"role": "user", "content": query}
         ]
 
@@ -73,30 +175,52 @@ def ask():
             "temperature": 0.7
         }
 
-        # Make API request to Groq
         response = requests.post(GROQ_URL, headers=headers, json=data)
         response.raise_for_status()
         result = response.json()
 
         reply = result['choices'][0]['message']['content']
-        
-        # Store the conversation
-        conversation_history.append({'query': query, 'response': reply})
-        
-        # Format the response with code highlighting
-        formatted_reply = format_code_blocks(reply)
-        
-        return jsonify({'response': formatted_reply})
-    
-    except requests.exceptions.RequestException as e:
-        return jsonify({'error': f"API request failed: {str(e)}"})
-    except Exception as e:
-        return jsonify({'error': f"An error occurred: {str(e)}"})
+        current_conversation.append({'query': query, 'response': reply})
 
-@app.route('/static/<path:path>')
-def serve_static(path):
-    """Serve static files"""
-    return app.send_static_file(path)
+        # Process the response with both code and table formatting
+        formatted_reply = markdown.markdown(reply)
+        formatted_reply = format_code_blocks(formatted_reply)
+        formatted_reply = format_tables(formatted_reply)
+
+        return jsonify({'response': formatted_reply, 'is_error': False})
+
+    except requests.exceptions.RequestException as e:
+        error_message = f"API request failed: {str(e)}"
+        return jsonify({'error': error_message, 'is_error': True})
+    except Exception as e:
+        error_message = f"An error occurred: {str(e)}"
+        return jsonify({'error': error_message, 'is_error': True})
+
+@app.route('/new_chat', methods=['POST'])
+def new_chat():
+    global current_conversation
+    if current_conversation:
+        save_chat_history(current_conversation)
+    current_conversation = []
+    return jsonify({'success': True})
+
+@app.route('/load_chat', methods=['POST'])
+def load_chat():
+    filename = request.form['filename']
+    try:
+        global current_conversation
+        current_conversation = load_chat_history(filename)
+        formatted_history = []
+        for item in current_conversation:
+            formatted_query = markdown.markdown(item['query'])
+            formatted_response = format_code_blocks(markdown.markdown(item['response']))
+            formatted_response = format_tables(formatted_response)
+            formatted_history.append({'query': formatted_query, 'response': formatted_response})
+        return jsonify({'success': True, 'conversation': formatted_history})
+    except FileNotFoundError:
+        return jsonify({'error': 'Chat history not found'}), 404
+    except Exception as e:
+        return jsonify({'error': f'Error loading chat: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
