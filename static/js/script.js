@@ -177,13 +177,14 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }
         chatContainer.appendChild(messageDiv);
-        attachCopyEventListeners();
+        attachCopyEventListeners(); // Make sure this is called after adding the message
     }
 
     function attachCopyEventListeners() {
         const copyButtons = document.querySelectorAll('.copy-button, .copy-answer-btn');
         copyButtons.forEach(button => {
             button.addEventListener('click', function() {
+                // This is where the copy action happens
                 const textToCopy = this.dataset.code ? decodeURIComponent(this.dataset.code) : this.dataset.text;
                 const originalHTML = this.innerHTML; // Store original HTML to preserve icon
                 navigator.clipboard.writeText(textToCopy)
@@ -200,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             this.innerHTML = originalHTML; // Revert to original HTML
                         }, 1500);
                     });
-            });
+                });
         });
     }
 
@@ -246,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             hljs.highlightElement(block);
                         });
                         chatContainer.scrollTop = chatContainer.scrollHeight;
-                        attachCopyEventListeners();
+                        attachCopyEventListeners(); // Ensure this is called after loading previous chats
                     } else {
                         console.error('Error loading chat:', data.error);
                     }
