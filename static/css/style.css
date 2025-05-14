@@ -441,3 +441,27 @@ button:hover {
         padding: 10px 12px;
     }
 }
+
+
+.comparison-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px; /* Adds vertical spacing between rows */
+}
+
+.comparison-table th,
+.comparison-table td {
+    padding: 12px 15px;
+    border: none;
+}
+
+.comparison-table tr {
+    margin-bottom: 10px;
+    display: table-row;
+}
+
+.comparison-table tbody tr {
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    margin-bottom: 10px;
+}
