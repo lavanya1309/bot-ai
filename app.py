@@ -49,8 +49,8 @@ def get_last_day_chats():
                 if history:
                     summary = history[0]['query'][:50] + "..." if len(history[0]['query']) > 50 else history[0]['query']
                     last_day_chats.append({'filename': filename, 'summary': summary, 'timestamp': chat_time.strftime("%H:%M")})
-            else:
-                break
+                else:
+                    break
         except ValueError:
             continue
     return last_day_chats
@@ -65,8 +65,7 @@ def format_code_blocks(text):
             lexer = get_lexer_by_name('text')
         formatter = HtmlFormatter(style='monokai')
         highlighted_code = highlight(code, lexer, formatter)
-        return f'<div class="code-block"><pre><code class="{language}">{highlighted_code}</code></pre></div>'
-
+        return f'<div class="code-block"><pre><code class="{language}">{highlighted_code}</code></pre><button class="copy-button" data-code="{code}"><i class="fas fa-copy"></i> Copy</button></div>'
     pattern = re.compile(r'```(\w+)?\n(.*?)\n```', re.DOTALL)
     return re.sub(pattern, replace, text)
 
@@ -74,6 +73,18 @@ def format_code_blocks(text):
 def get_last_day_chats_ajax():
     chats = get_last_day_chats()
     return jsonify(chats)
+
+@app.route('/delete_chat', methods=['POST'])
+def delete_chat():
+    filename = request.form['filename']
+    filepath = os.path.join(CHAT_HISTORY_DIR, filename)
+    try:
+        os.remove(filepath)
+        return jsonify({'success': True})
+    except FileNotFoundError:
+        return jsonify({'error': 'Chat history not found'}), 404
+    except Exception as e:
+        return jsonify({'error': f'Error deleting chat: {str(e)}'}), 500
 
 @app.route('/')
 def index():
@@ -90,7 +101,6 @@ def ask():
     query = request.form['query']
     if not query.strip():
         return jsonify({'error': 'Please enter a question', 'is_error': True})
-
     try:
         messages = [
             {"role": "system", "content": "You are a helpful AI assistant. Your goal is to understand the user's questions and provide clear, concise, and easy-to-understand answers. When providing code, always enclose it in markdown code blocks (using ```) and follow it with a step-by-step explanation of what the code does. Use analogies or real-world examples whenever possible to clarify complex concepts. Tailor your explanations to be accessible to a general audience."},
