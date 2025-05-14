@@ -47,10 +47,7 @@
                             <div class="user-message">
                                 <div class="avatar"><i class="fas fa-user"></i></div>
                                 <div class="content">{{ message.query | safe }}</div>
-                                <div class="edit-button-container">
-                                    <button class="edit-button" data-message-type="user" data-message-text="{{ message.query }}"><i class="fas fa-edit"></i></button>
                                 </div>
-                            </div>
                             <div class="ai-message">
                                 <div class="avatar"><i class="fas fa-robot"></i></div>
                                 <div class="content">{{ message.response | safe }}</div>
