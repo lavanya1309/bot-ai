@@ -66,6 +66,7 @@ def format_code_blocks(text):
             lexer = get_lexer_by_name('text')
         formatter = HtmlFormatter(style='monokai')
         highlighted_code = highlight(code, lexer, formatter)
+        # Ensure the HTML structure here matches what your JavaScript expects
         return f'<div class="code-block"><pre><code class="{language}">{highlighted_code}</code></pre></div>'
     pattern = re.compile(r'```(\w+)?\n(.*?)\n```', re.DOTALL)
     return re.sub(pattern, replace, text)
