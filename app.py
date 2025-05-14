@@ -1,4 +1,3 @@
-# app.py
 from flask import Flask, render_template, request, jsonify
 import requests
 import re
@@ -14,7 +13,7 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
 # Groq AI API configuration
-GROQ_API_KEY = "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"  # Replace with your actual Groq API key
+GROQ_API_KEY = "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"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL = "llama3-70b-8192"
 
@@ -50,8 +49,6 @@ def get_last_day_chats():
                 if history:
                     summary = history[0]['query'][:50] + "..." if len(history[0]['query']) > 50 else history[0]['query']
                     last_day_chats.append({'filename': filename, 'summary': summary, 'timestamp': chat_time.strftime("%H:%M")})
-                else:
-                    break
         except ValueError:
             continue
     return last_day_chats
@@ -71,39 +68,38 @@ def format_code_blocks(text):
     return re.sub(pattern, replace, text)
 
 def format_tables(text):
-    # Add CSS styling and responsive design to tables
+    # Fix malformed tables
+    text = re.sub(r'\|\s*\|\s*\|', '| --- | --- |', text)
+    
+    # Add table containers and styling
     text = re.sub(
         r'<table>',
-        '<div class="table-responsive"><table class="comparison-table">',
+        '<div class="table-container"><table class="comparison-table">',
         text
     )
     text = re.sub(r'</table>', '</table></div>', text)
     
-    # Add header styling
+    # Header styling
     text = re.sub(
         r'<thead>',
-        '<thead><tr style="background-color: var(--primary-color); color: white;">',
+        '<thead><tr class="table-header-row">',
         text
     )
     
-    # Add hover effects
-    text = re.sub(
-        r'<tbody>',
-        '<tbody style="transition: all 0.2s ease;">',
-        text
-    )
-    
-    # Ensure proper cell padding
-    text = re.sub(
-        r'<td>',
-        '<td style="padding: 12px 15px; border: 1px solid #e0e0e0;">',
-        text
-    )
-    
-    # Add alternating row colors
+    # Row styling
     text = re.sub(
         r'<tr>',
-        '<tr style="border-bottom: 1px solid #e0e0e0;">',
+        '<tr class="table-data-row">',
+        text
+    )
+    
+    # Fix empty cells
+    text = re.sub(r'<td>\s*</td>', '<td>—</td>', text)
+    
+    # Add cell padding
+    text = re.sub(
+        r'<td>',
+        '<td style="padding: 12px 15px;">',
         text
     )
     
@@ -121,10 +117,8 @@ def delete_chat():
     try:
         os.remove(filepath)
         return jsonify({'success': True})
-    except FileNotFoundError:
-        return jsonify({'error': 'Chat history not found'}), 404
     except Exception as e:
-        return jsonify({'error': f'Error deleting chat: {str(e)}'}), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/')
 def index():
@@ -132,7 +126,8 @@ def index():
     formatted_history = []
     for item in current_conversation:
         formatted_query = markdown.markdown(item['query'])
-        formatted_response = format_code_blocks(markdown.markdown(item['response']))
+        formatted_response = markdown.markdown(item['response'])
+        formatted_response = format_code_blocks(formatted_response)
         formatted_response = format_tables(formatted_response)
         formatted_history.append({'query': formatted_query, 'response': formatted_response})
     return render_template('index.html', conversation=formatted_history, previous_chats=previous_chats)
@@ -141,60 +136,47 @@ def index():
 def ask():
     query = request.form['query']
     if not query.strip():
-        return jsonify({'error': 'Please enter a question', 'is_error': True})
+        return jsonify({'error': 'Please enter a question'})
+    
+    system_prompt = """When comparing services, provide a Markdown table with:
+1. Clear headers in first row
+2. Alignment markers in second row (|:---|:---:|)
+3. Concise but informative content
+4. All major comparison points"""
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
+          for i, msg in enumerate(current_conversation[-3:])],
+        {"role": "user", "content": query}
+    ]
+
     try:
-        # Enhanced system prompt for table comparisons
-        system_prompt = """You are a highly skilled AI assistant that excels at providing information in structured formats. 
-When the user asks for a comparison or the difference between two or more items, you MUST present the information as a Markdown table with clear headers.
-
-For comparison questions, use this format:
-| Feature/Category | Item 1 | Item 2 | Item 3 |
-|------------------|--------|--------|--------|
-| Feature 1        | Value  | Value  | Value  |
-| Feature 2        | Value  | Value  | Value  |
-
-Include all relevant comparison points. For technical comparisons, include specific details like performance, pricing, use cases, etc.
-
-For non-comparison questions, provide clear explanations with code examples when appropriate, formatted in Markdown code blocks."""
-
-        messages = [
-            {"role": "system", "content": system_prompt},
-            *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
-              for i, msg in enumerate(current_conversation[-3:])],
-            {"role": "user", "content": query}
-        ]
-
-        headers = {
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json"
-        }
-
-        data = {
-            "model": MODEL,
-            "messages": messages,
-            "temperature": 0.7
-        }
-
-        response = requests.post(GROQ_URL, headers=headers, json=data)
+        response = requests.post(
+            GROQ_URL,
+            headers={
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": MODEL,
+                "messages": messages,
+                "temperature": 0.7
+            }
+        )
         response.raise_for_status()
-        result = response.json()
-
-        reply = result['choices'][0]['message']['content']
+        reply = response.json()['choices'][0]['message']['content']
+        
         current_conversation.append({'query': query, 'response': reply})
-
-        # Process the response with both code and table formatting
+        
         formatted_reply = markdown.markdown(reply)
         formatted_reply = format_code_blocks(formatted_reply)
         formatted_reply = format_tables(formatted_reply)
-
-        return jsonify({'response': formatted_reply, 'is_error': False})
-
-    except requests.exceptions.RequestException as e:
-        error_message = f"API request failed: {str(e)}"
-        return jsonify({'error': error_message, 'is_error': True})
+        
+        return jsonify({'response': formatted_reply})
+        
     except Exception as e:
-        error_message = f"An error occurred: {str(e)}"
-        return jsonify({'error': error_message, 'is_error': True})
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/new_chat', methods=['POST'])
 def new_chat():
@@ -213,14 +195,13 @@ def load_chat():
         formatted_history = []
         for item in current_conversation:
             formatted_query = markdown.markdown(item['query'])
-            formatted_response = format_code_blocks(markdown.markdown(item['response']))
+            formatted_response = markdown.markdown(item['response'])
+            formatted_response = format_code_blocks(formatted_response)
             formatted_response = format_tables(formatted_response)
             formatted_history.append({'query': formatted_query, 'response': formatted_response})
         return jsonify({'success': True, 'conversation': formatted_history})
-    except FileNotFoundError:
-        return jsonify({'error': 'Chat history not found'}), 404
     except Exception as e:
-        return jsonify({'error': f'Error loading chat: {str(e)}'}), 500
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
