@@ -150,12 +150,10 @@ document.addEventListener('DOMContentLoaded', function() {
         let contentDiv;
         if (sender === 'user') {
             const userContent = `<div class="content">${message}</div>`;
-            const editButton = `<div class="edit-button-container"><button class="edit-button" data-message-type="user" data-message-text="${encodeURIComponent(message)}"><i class="fas fa-edit"></i></button></div>`;
             messageDiv.innerHTML = `
                 <div class="user-message">
                     <div class="avatar"><i class="fas fa-user"></i></div>
                     ${userContent}
-                    ${editButton}
                 </div>
             `;
         } else if (sender === 'ai') {
@@ -181,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         chatContainer.appendChild(messageDiv);
         attachCopyEventListeners();
-        attachEditEventListeners();
+        // Since the edit button is removed, we no longer need to attach its listeners
     }
 
     function attachCopyEventListeners() {
@@ -208,44 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function attachEditEventListeners() {
-        const editButtons = document.querySelectorAll('.edit-button');
-        editButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const messageDiv = this.closest('.message');
-                const contentDiv = messageDiv.querySelector('.user-message .content');
-                const originalText = decodeURIComponent(this.dataset.messageText);
-                contentDiv.innerHTML = `
-                    <textarea class="edit-textarea">${originalText}</textarea>
-                    <div class="edit-controls">
-                        <button class="save-edit-btn">Save</button>
-                        <button class="cancel-edit-btn">Cancel</button>
-                    </div>
-                `;
-                const textarea = contentDiv.querySelector('.edit-textarea');
-                textarea.focus();
-
-                const saveButton = contentDiv.querySelector('.save-edit-btn');
-                const cancelButton = contentDiv.querySelector('.cancel-edit-btn');
-
-                saveButton.addEventListener('click', function() {
-                    const newText = textarea.value.trim();
-                    if (newText) {
-                        contentDiv.innerHTML = newText + `<div class="edit-button-container"><button class="edit-button" data-message-type="user" data-message-text="${encodeURIComponent(newText)}"><i class="fas fa-edit"></i></button></div>`;
-                        // Optionally, you might want to resend the edited query to the bot
-                    } else {
-                        contentDiv.innerHTML = originalText + `<div class="edit-button-container"><button class="edit-button" data-message-type="user" data-message-text="${encodeURIComponent(originalText)}"><i class="fas fa-edit"></i></button></div>`;
-                    }
-                    attachEditEventListeners(); // Re-attach listeners after editing
-                });
-
-                cancelButton.addEventListener('click', function() {
-                    contentDiv.innerHTML = originalText + `<div class="edit-button-container"><button class="edit-button" data-message-type="user" data-message-text="${encodeURIComponent(originalText)}"><i class="fas fa-edit"></i></button></div>`;
-                    attachEditEventListeners(); // Re-attach listeners after canceling
-                });
-            });
-        });
-    }
+    // The attachEditEventListeners function is no longer needed as the edit button is removed
 
     if (previousChatsList) {
         previousChatsList.addEventListener('click', async function(event) {
@@ -274,9 +235,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class="user-message">
                                     <div class="avatar"><i class="fas fa-user"></i></div>
                                     <div class="content">${item.query}</div>
-                                    <div class="edit-button-container">
-                                        <button class="edit-button" data-message-type="user" data-message-text="${encodeURIComponent(item.query)}"><i class="fas fa-edit"></i></button>
-                                    </div>
                                 </div>
                                 <div class="ai-message">
                                     <div class="avatar"><i class="fas fa-robot"></i></div>
@@ -293,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                         chatContainer.scrollTop = chatContainer.scrollHeight;
                         attachCopyEventListeners();
-                        attachEditEventListeners();
+                        // No need to attach edit listeners
                     } else {
                         console.error('Error loading chat:', data.error);
                     }
