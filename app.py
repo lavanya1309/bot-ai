@@ -1,6 +1,6 @@
 # app.py
 from flask import Flask, render_template, request, jsonify
-import requests
+import google.generativeai as genai
 import re
 import markdown
 from pygments import highlight
@@ -13,10 +13,13 @@ import os
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
-# Groq AI API configuration
-GROQ_API_KEY = "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"  # Replace with your actual Groq API key
-GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL = "llama3-70b-8192"
+# Gemini AI API configuration
+GEMINI_API_KEY = "AIzaSyCriLYjFnFwJ8rzjG7r358Ef_7ENsP-jLc"  # Replace with your actual Gemini API key
+MODEL_NAME = "gemini-pro"  # Or "gemini-pro-vision" for multimodal
+
+# Initialize Gemini API
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel(MODEL_NAME)
 
 # Directory to store chat history
 CHAT_HISTORY_DIR = "chat_history"
@@ -131,43 +134,24 @@ Specifically, when asked for the difference between AWS and Azure cloud services
 | ... | ... | ... |
 
 For other types of questions that do not involve comparison, follow the previous instructions for code blocks and explanations."""},
-            *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
+            *[{"role": "user" if i % 2 == 0 else "model", "content": msg['query'] if i % 2 == 0 else msg['response']}
               for i, msg in enumerate(current_conversation[-3:])],
             {"role": "user", "content": query}
         ]
 
-        headers = {
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json"
-        }
+        prompt_parts = [part["content"] for part in messages]
 
-        data = {
-            "model": MODEL,
-            "messages": messages,
-            "temperature": 0.7
-        }
-
-        response = requests.post(GROQ_URL, headers=headers, json=data)
-        response.raise_for_status()
-        result = response.json()
-        print(f"Groq Response: {result}")
-
-        reply = result['choices'][0]['message']['content']
+        response = model.generate_content(prompt_parts)
+        response.resolve()
+        reply = response.text
 
         current_conversation.append({'query': query, 'response': reply})
-
         formatted_reply = format_code_blocks(markdown.markdown(reply))
-        print(f"Flask Response: {jsonify({'response': formatted_reply, 'is_error': False})}")
-
         return jsonify({'response': formatted_reply, 'is_error': False})
 
-    except requests.exceptions.RequestException as e:
-        error_message = f"API request failed: {str(e)}"
-        print(f"Flask Error (RequestException): {error_message}")
-        return jsonify({'error': error_message, 'is_error': True})
     except Exception as e:
-        error_message = f"An error occurred: {str(e)}"
-        print(f"Flask Error (General): {error_message}")
+        error_message = f"An error occurred with the Gemini API: {str(e)}"
+        print(f"Flask Error (Gemini API): {error_message}")
         return jsonify({'error': error_message, 'is_error': True})
 
 @app.route('/new_chat', methods=['POST'])
