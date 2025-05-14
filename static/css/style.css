@@ -383,6 +383,7 @@ button:hover {
 }
 
 /* Table Styles */
+/* Table Styles */
 .table-container {
     width: 100%;
     overflow-x: auto;
@@ -405,6 +406,7 @@ button:hover {
     padding: 15px;
     text-align: left;
     font-weight: 600;
+    border: none;
 }
 
 .comparison-table td {
@@ -425,6 +427,11 @@ button:hover {
     background-color: #f1f3f5;
 }
 
+.comparison-table td:first-child {
+    font-weight: 500;
+    color: #333;
+}
+
 /* Responsive tables */
 @media (max-width: 768px) {
     .table-container {
@@ -434,6 +441,7 @@ button:hover {
     
     .comparison-table {
         font-size: 0.85em;
+        min-width: 100%;
     }
     
     .comparison-table th,
@@ -443,25 +451,4 @@ button:hover {
 }
 
 
-.comparison-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0 10px; /* Adds vertical spacing between rows */
-}
 
-.comparison-table th,
-.comparison-table td {
-    padding: 12px 15px;
-    border: none;
-}
-
-.comparison-table tr {
-    margin-bottom: 10px;
-    display: table-row;
-}
-
-.comparison-table tbody tr {
-    background-color: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    margin-bottom: 10px;
-}
