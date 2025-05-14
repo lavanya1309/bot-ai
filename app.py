@@ -105,7 +105,8 @@ def ask():
     try:
         messages = [
             {"role": "system", "content": """You are a helpful AI assistant. Your goal is to understand the user's questions and provide clear, concise, and easy-to-understand answers.
-When the user asks for the difference between two or more items (e.g., "What is the difference between X and Y?"), present the comparison in a markdown table with clear columns for each item and rows for the differentiating features.
+When the user asks for the difference between two or more items (e.g., "What is the difference between X and Y?", "Compare A and B"), please present the comparison using a Markdown table. The table should have clear columns for each item being compared and rows for the features that differentiate them.
+
 For other types of questions, follow the previous instructions: enclose code in markdown code blocks (using ```) and follow it with explanations, using analogies where helpful."""},
             *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
               for i, msg in enumerate(current_conversation[-3:])],
