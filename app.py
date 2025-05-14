@@ -102,8 +102,12 @@ def ask():
     if not query.strip():
         return jsonify({'error': 'Please enter a question', 'is_error': True})
     try:
+        # Update the system message to ensure the response is in table format
         messages = [
-            {"role": "system", "content": """You are a highly skilled AI assistant that excels at providing information in structured formats. When the user asks for a comparison or the difference between two or more items, you MUST provide the response as a **Markdown table**.
+            {"role": "system", "content": """
+You are a highly skilled AI assistant that excels at providing information in structured formats. 
+When the user asks for a comparison or the difference between two or more items, 
+you MUST present the information as a Markdown table.
 
 For example, if the user asks "What is the difference between X and Y?", your response should look like this:
 
@@ -111,9 +115,11 @@ For example, if the user asks "What is the difference between X and Y?", your re
 |---|---|---|
 | Feature 1 | Description of X's Feature 1 | Description of Y's Feature 1 |
 | Feature 2 | Description of X's Feature 2 | Description of Y's Feature 2 |
+| ... | ... | ... |
 
-Make sure the response is always in a **Markdown table** format, even if the query is asking about other things, such as products, tools, or services. The response must not be a paragraph or bullet points, but a **table** in Markdown format. If the question is not about a comparison, answer it normally with text and code formatting."""},
-            *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response'] }
+Please ensure that all comparison questions are answered in table format.
+"""}, 
+            *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']} 
               for i, msg in enumerate(current_conversation[-3:])],
             {"role": "user", "content": query}
         ]
@@ -132,19 +138,24 @@ Make sure the response is always in a **Markdown table** format, even if the que
         response = requests.post(GROQ_URL, headers=headers, json=data)
         response.raise_for_status()
         result = response.json()
+        print(f"Groq Response: {result}")
 
         reply = result['choices'][0]['message']['content']
 
-        # Format the AI reply to ensure it's in a table format (you may already be doing this)
+        current_conversation.append({'query': query, 'response': reply})
+
         formatted_reply = format_code_blocks(markdown.markdown(reply))
+        print(f"Flask Response: {jsonify({'response': formatted_reply, 'is_error': False})}")
 
         return jsonify({'response': formatted_reply, 'is_error': False})
 
     except requests.exceptions.RequestException as e:
         error_message = f"API request failed: {str(e)}"
+        print(f"Flask Error (RequestException): {error_message}")
         return jsonify({'error': error_message, 'is_error': True})
     except Exception as e:
         error_message = f"An error occurred: {str(e)}"
+        print(f"Flask Error (General): {error_message}")
         return jsonify({'error': error_message, 'is_error': True})
 
 @app.route('/new_chat', methods=['POST'])
