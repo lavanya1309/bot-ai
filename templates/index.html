@@ -39,7 +39,7 @@
                 <div class="message">
                     <div class="user-message">
                         <div class="avatar"><i class="fas fa-user"></i></div>
-                        <div class="content">{{ message.query }}</div>
+                        <div class="content">{{ message.query | safe }}</div>
                         <div class="message-actions">
                             <button class="edit-button" data-message-type="user" data-message-index="{{ loop.index0 }}"><i class="fas fa-edit"></i></button>
                         </div>
@@ -48,7 +48,7 @@
                         <div class="avatar"><i class="fas fa-robot"></i></div>
                         <div class="content">{{ message.response | safe }}</div>
                         <div class="message-actions">
-                            <button class="copy-button" data-code="{{ message.response | striptags }}"><i class="fas fa-copy"></i> Copy</button>
+                            <button class="copy-text-button" data-text="{{ message.response | striptags | replace('\n', '&#10;') }}"><i class="fas fa-copy"></i> Copy</button>
                         </div>
                     </div>
                 </div>
