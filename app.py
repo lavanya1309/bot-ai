@@ -104,10 +104,19 @@ def ask():
         return jsonify({'error': 'Please enter a question', 'is_error': True})
     try:
         messages = [
-            {"role": "system", "content": """You are a helpful AI assistant. Your goal is to understand the user's questions and provide clear, concise, and easy-to-understand answers.
-When the user asks for the difference between two or more items (e.g., "What is the difference between X and Y?", "Compare A and B"), please present the comparison using a Markdown table. The table should have clear columns for each item being compared and rows for the features that differentiate them.
+            {"role": "system", "content": """You are a highly skilled AI assistant that excels at providing information in structured formats. When the user asks for a comparison or the difference between two or more items, you MUST present the information as a Markdown table.
 
-For other types of questions, follow the previous instructions: enclose code in markdown code blocks (using ```) and follow it with explanations, using analogies where helpful."""},
+For example, if the user asks "What is the difference between X and Y?", your response should look like this:
+
+| Feature | X | Y |
+|---|---|---|
+| Feature 1 | Description of X's Feature 1 | Description of Y's Feature 1 |
+| Feature 2 | Description of X's Feature 2 | Description of Y's Feature 2 |
+| ... | ... | ... |
+
+Specifically, when asked for the difference between AWS and Azure cloud services, provide a detailed comparison in a Markdown table with clear categories like 'Compute', 'Storage', 'Database', etc., and list the corresponding services for each platform in the respective columns.
+
+For other types of questions that do not involve comparison, follow the previous instructions for code blocks and explanations."""},
             *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
               for i, msg in enumerate(current_conversation[-3:])],
             {"role": "user", "content": query}
