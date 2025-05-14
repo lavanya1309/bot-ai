@@ -15,7 +15,7 @@ app.secret_key = 'your_secret_key_here'
 
 # Gemini AI API configuration
 GEMINI_API_KEY = "AIzaSyCriLYjFnFwJ8rzjG7r358Ef_7ENsP-jLc"  # Replace with your actual Gemini API key
-MODEL_NAME = "gemini-pro"  # Or "gemini-pro-vision" for multimodal
+MODEL_NAME = "gemini-1.0-pro"  # Or "gemini-pro-vision" for multimodal
 
 # Initialize Gemini API
 genai.configure(api_key=GEMINI_API_KEY)
