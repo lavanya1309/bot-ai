@@ -158,10 +158,14 @@ body {
     border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
     margin-bottom: 20px;
+    display: flex; /* Enable flexbox for message alignment */
+    flex-direction: column; /* Stack messages vertically */
 }
 
 .message {
     margin-bottom: 25px;
+    display: flex; /* Enable flexbox for content and buttons */
+    flex-direction: column; /* Stack avatar/content and buttons */
 }
 
 .message.error .ai-message {
@@ -170,23 +174,38 @@ body {
 
 .user-message, .ai-message {
     display: flex;
-    margin-bottom: 10px;
     gap: 15px;
     padding-left: 5px;
     align-items: flex-start; /* Align items to the top */
+    width: fit-content; /* Adjust width to content */
+    max-width: 80%; /* Prevent overflow */
+}
+
+.user-message {
+    align-self: flex-end; /* Align user messages to the right */
+    background-color: #dcf8c6; /* Light green background for user messages */
+    border-radius: 10px 10px 0 10px;
+    padding: 8px 12px;
+    margin-right: 10px;
+}
+
+.ai-message {
+    align-self: flex-start; /* Align bot messages to the left */
+    background-color: #e3f2fd; /* Light blue background for bot messages */
+    border-radius: 0 10px 10px 10px;
+    padding: 8px 12px;
+    margin-left: 10px;
 }
 
 .ai-message .content {
-    flex: 1;
-    padding-top: 5px;
-    padding-left: 15px;
-    border-left: 4px solid var(--primary-color);
-    margin-left: -16px;
+    border-left: none; /* Remove the left border for bot content */
+    padding-left: 0;
+    margin-left: 0;
 }
 
 .avatar {
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     background-color: var(--light-gray);
     display: flex;
@@ -194,7 +213,7 @@ body {
     justify-content: center;
     flex-shrink: 0;
     color: var(--primary-color);
-    font-size: 18px;
+    font-size: 14px;
 }
 
 .ai-message .avatar {
@@ -204,7 +223,7 @@ body {
 
 .content {
     flex: 1;
-    padding-top: 5px;
+    padding-top: 3px;
     word-break: break-word; /* Prevent long words from breaking layout */
 }
 
