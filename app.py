@@ -66,7 +66,6 @@ def format_code_blocks(text):
             lexer = get_lexer_by_name('text')
         formatter = HtmlFormatter(style='monokai')
         highlighted_code = highlight(code, lexer, formatter)
-        # Ensure the HTML structure here matches what your JavaScript expects
         return f'<div class="code-block"><pre><code class="{language}">{highlighted_code}</code></pre></div>'
     pattern = re.compile(r'```(\w+)?\n(.*?)\n```', re.DOTALL)
     return re.sub(pattern, replace, text)
@@ -105,7 +104,9 @@ def ask():
         return jsonify({'error': 'Please enter a question', 'is_error': True})
     try:
         messages = [
-            {"role": "system", "content": "You are a helpful AI assistant. Your goal is to understand the user's questions and provide clear, concise, and easy-to-understand answers. When providing code, always enclose it in markdown code blocks (using ```) and follow it with a step-by-step explanation of what the code does. Use analogies or real-world examples whenever possible to clarify complex concepts. Tailor your explanations to be accessible to a general audience."},
+            {"role": "system", "content": """You are a helpful AI assistant. Your goal is to understand the user's questions and provide clear, concise, and easy-to-understand answers.
+When the user asks for the difference between two or more items (e.g., "What is the difference between X and Y?"), present the comparison in a markdown table with clear columns for each item and rows for the differentiating features.
+For other types of questions, follow the previous instructions: enclose code in markdown code blocks (using ```) and follow it with explanations, using analogies where helpful."""},
             *[{"role": "user" if i % 2 == 0 else "assistant", "content": msg['query'] if i % 2 == 0 else msg['response']}
               for i, msg in enumerate(current_conversation[-3:])],
             {"role": "user", "content": query}
