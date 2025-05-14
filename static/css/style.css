@@ -383,32 +383,29 @@ button:hover {
 }
 
 
+/* Add this to your existing style.css */
 .comparison-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 20px 0;
+    margin: 15px 0;
     font-size: 0.9em;
-    min-width: 600px;
-    border-radius: 5px;
-    overflow: hidden;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 
 .comparison-table thead tr {
     background-color: var(--primary-color);
-    color: #ffffff;
+    color: white;
     text-align: left;
-    font-weight: bold;
 }
 
 .comparison-table th,
 .comparison-table td {
     padding: 12px 15px;
-    border-bottom: 1px solid #dddddd;
+    border: 1px solid #ddd;
 }
 
 .comparison-table tbody tr {
-    border-bottom: 1px solid #dddddd;
+    border-bottom: 1px solid #ddd;
 }
 
 .comparison-table tbody tr:nth-of-type(even) {
@@ -421,16 +418,4 @@ button:hover {
 
 .comparison-table tbody tr:hover {
     background-color: #f1f1f1;
-    color: var(--primary-color);
-}
-
-.table-container {
-    overflow-x: auto;
-    margin: 25px 0;
-    border-radius: 5px;
-}
-
-/* Add subtle animation to hover */
-.comparison-table tbody tr {
-    transition: all 0.2s ease-in-out;
 }
