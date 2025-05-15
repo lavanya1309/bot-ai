@@ -452,3 +452,29 @@ button:hover {
 
 
 
+.document-actions {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.generate-doc-btn {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.generate-doc-btn:hover {
+    background-color: #e0e0e0;
+}
+
+.generate-doc-btn i {
+    font-size: 0.9rem;
+}
