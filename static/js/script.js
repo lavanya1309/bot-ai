@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             const chats = await response.json();
-            previousChatsList.innerHTML = ''; // Clear the current list
+            previousChatsList.innerHTML = '';
             if (chats.length > 0) {
                 chats.forEach(chat => {
                     const li = document.createElement('li');
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             const data = await response.json();
             if (data.success) {
-                await updatePreviousChats(); // Fetch and update the previous chats list
+                await updatePreviousChats();
             }
         } catch (error) {
             console.error('Error communicating new chat to backend:', error);
@@ -108,17 +108,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function appendMessage(sender, message) {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message';
-        let contentDiv;
+        
         if (sender === 'user') {
             messageDiv.innerHTML = `
                 <div class="user-message">
-                    <div class="avatar"><i class="fas fa-user"></i></div>
-                    <div class="content">${message}</div>
+                    <div class="message-content">${message}</div>
                 </div>
             `;
         } else if (sender === 'ai') {
             let formattedMessage = message;
-            // Find all code blocks and add a copy button
             formattedMessage = formattedMessage.replace(/<div class="code-block"><pre><code class="([^"]*)">([\s\S]*?)<\/code><\/pre><\/div>/g, (match, language, code) => {
                 const escapedCode = code.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
                 return `
@@ -130,13 +128,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             messageDiv.innerHTML = `
                 <div class="ai-message">
-                    <div class="avatar"><i class="fas fa-robot"></i></div>
-                    <div class="content">${formattedMessage}</div>
+                    <div class="message-content">${formattedMessage}</div>
                 </div>
             `;
         }
         chatContainer.appendChild(messageDiv);
-        // After appending the message, attach event listeners to the new copy buttons
         attachCopyEventListeners();
     }
 
@@ -147,7 +143,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const code = decodeURIComponent(this.dataset.code);
                 navigator.clipboard.writeText(code)
                     .then(() => {
-                        // Optional: Provide visual feedback (e.g., change button text briefly)
                         this.textContent = 'Copied!';
                         setTimeout(() => {
                             this.innerHTML = '<i class="fas fa-copy"></i> Copy';
@@ -187,8 +182,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         const data = await response.json();
                         if (data.success) {
-                            await updatePreviousChats(); // Reload the previous chats list
-                            clearChatDisplay(); // Optionally clear the main chat area
+                            await updatePreviousChats();
+                            clearChatDisplay();
                         } else {
                             console.error('Error deleting chat:', data.error);
                             alert(`Error deleting chat: ${data.error}`);
@@ -216,19 +211,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.success) {
                         chatContainer.innerHTML = '';
                         data.conversation.forEach(item => {
-                            const messageDiv = document.createElement('div');
-                            messageDiv.className = 'message';
-                            messageDiv.innerHTML = `
+                            const userDiv = document.createElement('div');
+                            userDiv.className = 'message';
+                            userDiv.innerHTML = `
                                 <div class="user-message">
-                                    <div class="avatar"><i class="fas fa-user"></i></div>
-                                    <div class="content">${item.query}</div>
-                                </div>
-                                <div class="ai-message">
-                                    <div class="avatar"><i class="fas fa-robot"></i></div>
-                                    <div class="content">${item.response}</div>
+                                    <div class="message-content">${item.query}</div>
                                 </div>
                             `;
-                            chatContainer.appendChild(messageDiv);
+                            chatContainer.appendChild(userDiv);
+
+                            const aiDiv = document.createElement('div');
+                            aiDiv.className = 'message';
+                            aiDiv.innerHTML = `
+                                <div class="ai-message">
+                                    <div class="message-content">${item.response}</div>
+                                </div>
+                            `;
+                            chatContainer.appendChild(aiDiv);
                         });
                         document.querySelectorAll('pre code').forEach((block) => {
                             hljs.highlightElement(block);
@@ -244,6 +243,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Initial load of previous chats
     updatePreviousChats();
 });
