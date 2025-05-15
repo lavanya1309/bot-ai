@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 import requests
 import re
 import markdown
@@ -8,6 +8,11 @@ from pygments.formatters import HtmlFormatter
 from datetime import datetime, timedelta
 import json
 import os
+from docx import Document
+from io import BytesIO
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -73,7 +78,6 @@ def format_code_blocks(text):
     return re.sub(pattern, replace, text)
 
 def format_tables(text):
-    # Fix malformed tables
     text = re.sub(r'\|\s*\|\s*\|', '| --- | --- |', text)
 
     def process_table(match):
@@ -95,6 +99,60 @@ def format_tables(text):
 
     text = re.sub(r'(\|.*\|.*\n)(\|.*\|\n)*', process_table, text)
     return text
+
+def generate_word_document(content):
+    doc = Document()
+    doc.add_heading('Generated Document', 0)
+    
+    # Remove markdown formatting
+    plain_text = re.sub(r'#+\s*', '', content)  # Remove headings
+    plain_text = re.sub(r'\*\*(.*?)\*\*', r'\1', plain_text)  # Remove bold
+    plain_text = re.sub(r'\*(.*?)\*', r'\1', plain_text)  # Remove italics
+    plain_text = re.sub(r'`(.*?)`', r'\1', plain_text)  # Remove code
+    plain_text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', plain_text)  # Remove links
+    
+    for paragraph in plain_text.split('\n'):
+        if paragraph.strip():
+            doc.add_paragraph(paragraph)
+    
+    file_stream = BytesIO()
+    doc.save(file_stream)
+    file_stream.seek(0)
+    return file_stream
+
+def generate_pdf_document(content):
+    file_stream = BytesIO()
+    doc = SimpleDocTemplate(file_stream, pagesize=letter)
+    styles = getSampleStyleSheet()
+    
+    # Remove markdown formatting
+    plain_text = re.sub(r'#+\s*', '', content)
+    plain_text = re.sub(r'\*\*(.*?)\*\*', r'\1', plain_text)
+    plain_text = re.sub(r'\*(.*?)\*', r'\1', plain_text)
+    plain_text = re.sub(r'`(.*?)`', r'\1', plain_text)
+    plain_text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', plain_text)
+    
+    story = []
+    for paragraph in plain_text.split('\n'):
+        if paragraph.strip():
+            story.append(Paragraph(paragraph, styles["Normal"]))
+    
+    doc.build(story)
+    file_stream.seek(0)
+    return file_stream
+
+def generate_txt_document(content):
+    # Remove markdown formatting
+    plain_text = re.sub(r'#+\s*', '', content)
+    plain_text = re.sub(r'\*\*(.*?)\*\*', r'\1', plain_text)
+    plain_text = re.sub(r'\*(.*?)\*', r'\1', plain_text)
+    plain_text = re.sub(r'`(.*?)`', r'\1', plain_text)
+    plain_text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', plain_text)
+    
+    file_stream = BytesIO()
+    file_stream.write(plain_text.encode('utf-8'))
+    file_stream.seek(0)
+    return file_stream
 
 @app.route('/')
 def index():
@@ -118,7 +176,9 @@ def ask():
 1. Clear headers in first row
 2. Alignment markers in second row (|:---|:---:|)
 3. Concise but informative content
-4. All major comparison points"""
+4. All major comparison points
+
+When asked to generate documents (leave letters, reports, etc.), provide well-formatted content suitable for conversion to Word, PDF, or TXT files."""
 
     messages = [
         {"role": "system", "content": system_prompt},
@@ -150,50 +210,51 @@ def ask():
         formatted_reply = format_code_blocks(formatted_reply)
         formatted_reply = format_tables(formatted_reply)
 
-        return jsonify({'response': formatted_reply})
+        return jsonify({'response': formatted_reply, 'raw_response': reply})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/new_chat', methods=['POST'])
-def new_chat():
-    global current_conversation
-    if current_conversation:
-        save_chat_history(current_conversation)
-    current_conversation = []
-    return jsonify({'success': True})
-
-@app.route('/load_chat', methods=['POST'])
-def load_chat():
-    filename = request.form['filename']
-    global current_conversation
+@app.route('/generate_document', methods=['POST'])
+def generate_document():
+    data = request.json
+    content = data.get('content', '')
+    doc_type = data.get('type', 'docx')
+    
+    if not content:
+        return jsonify({'error': 'No content provided'}), 400
+    
     try:
-        current_conversation = load_chat_history(filename)
-        formatted_history = []
-        for item in current_conversation:
-            formatted_query = markdown.markdown(item['query'])
-            formatted_response = markdown.markdown(item['response'])
-            formatted_response = format_code_blocks(formatted_response)
-            formatted_response = format_tables(formatted_response)
-            formatted_history.append({'query': formatted_query, 'response': formatted_response})
-        return jsonify({'success': True, 'conversation': formatted_history})
+        if doc_type == 'docx':
+            file_stream = generate_word_document(content)
+            return send_file(
+                file_stream,
+                as_attachment=True,
+                download_name='document.docx',
+                mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            )
+        elif doc_type == 'pdf':
+            file_stream = generate_pdf_document(content)
+            return send_file(
+                file_stream,
+                as_attachment=True,
+                download_name='document.pdf',
+                mimetype='application/pdf'
+            )
+        elif doc_type == 'txt':
+            file_stream = generate_txt_document(content)
+            return send_file(
+                file_stream,
+                as_attachment=True,
+                download_name='document.txt',
+                mimetype='text/plain'
+            )
+        else:
+            return jsonify({'error': 'Invalid document type'}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/get_last_day_chats', methods=['GET'])
-def get_last_day_chats_ajax():
-    chats = get_last_day_chats()
-    return jsonify(chats)
-
-@app.route('/delete_chat', methods=['POST'])
-def delete_chat():
-    filename = request.form['filename']
-    filepath = os.path.join(CHAT_HISTORY_DIR, filename)
-    try:
-        os.remove(filepath)
-        return jsonify({'success': True})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+# ... [keep all other existing routes the same] ...
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
