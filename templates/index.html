@@ -38,13 +38,14 @@
             <div class="chat-container" id="chatContainer">
                 {% for item in conversation %}
                     <div class="message">
-                        <div class="user-message">
-                            <div class="message-content">{{ item.query|safe }}</div>
+                        <div class="ai-message">
+                            <div class="ai-avatar"><i class="fas fa-robot"></i></div>
+                            <div class="message-content">{{ item.response|safe }}</div>
                         </div>
                     </div>
                     <div class="message">
-                        <div class="ai-message">
-                            <div class="message-content">{{ item.response|safe }}</div>
+                        <div class="user-message">
+                            <div class="message-content">{{ item.query|safe }}</div>
                         </div>
                     </div>
                 {% endfor %}
