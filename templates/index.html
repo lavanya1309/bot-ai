@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
+    <!-- Add dark theme highlight.js style -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css">
 </head>
 <body>
     <div class="app-container">
@@ -15,6 +17,19 @@
                 <h1><i class="fas fa-robot"></i> Medical AI</h1>
                 <p class="subtitle">Ask me anything about medical topics</p>
             </header>
+            
+            <!-- Add theme toggle here -->
+            <div class="theme-toggle-container">
+                <label class="theme-toggle-label">
+                    <i class="fas fa-moon"></i>
+                    <div class="theme-toggle">
+                        <input type="checkbox" id="themeToggle">
+                        <span class="slider"></span>
+                    </div>
+                    <i class="fas fa-sun"></i>
+                </label>
+            </div>
+            
             <button id="newChatBtn" class="new-chat-button">
                 <i class="fas fa-plus-circle"></i> New Chat
             </button>
