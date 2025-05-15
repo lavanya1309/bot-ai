@@ -68,14 +68,12 @@ def format_code_blocks(text):
         formatter = HtmlFormatter(style='monokai')
         highlighted_code = highlight(code, lexer, formatter)
         return f'<div class="code-block"><pre><code class="{language}">{highlighted_code}</code></pre></div>'
-    
     pattern = re.compile(r'```(\w+)?\n(.*?)\n```', re.DOTALL)
     return re.sub(pattern, replace, text)
 
 def format_tables(text):
     # Fix malformed tables
-    text = re.sub(r'\|\s*\|\s*\|', '| --- | --- |', text)
-
+    text = re.sub(r'|\s*|\s*|', '| --- | --- |', text)
     def process_table(match):
         rows = [row.strip() for row in match.group(0).split('\n') if row.strip() and '---' not in row]
         if len(rows) < 2:
@@ -115,11 +113,10 @@ def ask():
         return jsonify({'error': 'Please enter a question'})
 
     system_prompt = """When comparing services, provide a Markdown table with:
-1. Clear headers in first row
-2. Alignment markers in second row (|:---|:---:|)
-3. Concise but informative content
-4. All major comparison points"""
-
+Clear headers in first row
+Alignment markers in second row (|:---|:---:|)
+Concise but informative content
+All major comparison points"""
     messages = [
         {"role": "system", "content": system_prompt},
         *[
@@ -145,13 +142,10 @@ def ask():
         response.raise_for_status()
         reply = response.json()['choices'][0]['message']['content']
         current_conversation.append({'query': query, 'response': reply})
-
         formatted_reply = markdown.markdown(reply)
         formatted_reply = format_code_blocks(formatted_reply)
         formatted_reply = format_tables(formatted_reply)
-
         return jsonify({'response': formatted_reply})
-
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
