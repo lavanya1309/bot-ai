@@ -8,6 +8,8 @@
     --success-color: #2a9d8f;
     --new-chat-hover: #3a0ca3;
     --chat-bg: #f0f8ff;
+    --user-message-bg: #e3f2fd;
+    --ai-message-bg: #ffffff;
 }
 
 * {
@@ -111,7 +113,7 @@ body {
     cursor: pointer;
     transition: background-color 0.3s;
     font-size: 0.9rem;
-    display: flex; /* To align text and button */
+    display: flex;
     justify-content: space-between;
     align-items: center;
 }
@@ -163,52 +165,47 @@ body {
     border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
     margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 .message {
-    margin-bottom: 25px;
-}
-
-.message.error .ai-message {
-    border-left: 4px solid var(--error-color);
-}
-
-.user-message, .ai-message {
     display: flex;
-    margin-bottom: 10px;
-    gap: 15px;
-    padding-left: 5px;
+    flex-direction: column;
+    max-width: 80%;
+    position: relative;
 }
 
-.ai-message .content {
-    flex: 1;
-    padding-top: 5px;
-    padding-left: 15px;
-    border-left: 4px solid var(--primary-color);
-    margin-left: -6px;
+.user-message {
+    align-self: flex-start;
+    background-color: var(--user-message-bg);
+    border-radius: 15px 15px 15px 0;
+    padding: 12px 16px;
+    margin-right: auto;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: var(--light-gray);
+.ai-message {
+    align-self: flex-end;
+    background-color: var(--ai-message-bg);
+    border-radius: 15px 15px 0 15px;
+    padding: 12px 16px;
+    margin-left: auto;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    border: 1px solid #eee;
+}
+
+.message-header {
     display: flex;
     align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    color: var(--primary-color);
-    font-size: 18px;
+    gap: 8px;
+    margin-bottom: 5px;
+    font-weight: bold;
 }
 
-.ai-message .avatar {
-    background-color: #e3f2fd;
-    color: var(--secondary-color);
-}
-
-.content {
-    flex: 1;
-    padding-top: 5px;
+.message-content {
+    line-height: 1.5;
 }
 
 .query-form {
@@ -278,12 +275,12 @@ button:hover {
 }
 
 .code-block {
-    position: relative; /* To position the copy button */
-    margin-bottom: 15px;
+    position: relative;
+    margin: 10px 0;
     border: 1px solid #ddd;
     border-radius: 5px;
     background-color: #f6f8fa;
-    overflow: auto; /* Ensure scrollbar if code is long */
+    overflow: auto;
 }
 
 .code-block pre {
