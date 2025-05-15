@@ -3,17 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Groq Chatbot</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <title>Groq Chat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/monokai-sublime.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
-    <script src="/static/js/script.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            hljs.highlightAll();
-        });
-    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai-sublime.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
 </head>
 <body>
     <div class="app-container">
@@ -28,7 +23,7 @@
                 <ul id="previousChatsList">
                     {% if previous_chats %}
                         {% for chat in previous_chats %}
-                            <li class="previous-chat-item" data-filename="{{ chat.filename }}">
+                            <li data-filename="{{ chat.filename }}" class="previous-chat-item">
                                 {{ chat.summary }} <span class="chat-time">({{ chat.timestamp }})</span>
                                 <button class="delete-chat-btn" data-filename="{{ chat.filename }}"><i class="fas fa-trash-alt"></i></button>
                             </li>
@@ -42,17 +37,17 @@
         <div class="chat-area">
             <div id="chatContainer" class="chat-container">
                 {% if conversation %}
-                    {% for message in conversation %}
+                    {% for item in conversation %}
                         <div class="message">
                             <div class="user-message">
                                 <div class="avatar"><i class="fas fa-user"></i></div>
-                                <div class="content">{{ message.query | safe }}</div>
+                                <div class="content">{{ item.query|safe }}</div>
                             </div>
                             <div class="ai-message">
                                 <div class="avatar"><i class="fas fa-robot"></i></div>
-                                <div class="content">{{ message.response | safe }}</div>
+                                <div class="content">{{ item.response|safe }}</div>
                                 <div class="copy-button-container">
-                                    <button class="copy-answer-btn" data-text="{{ message.response | striptags }}"><i class="fas fa-copy"></i> Copy</button>
+                                    <button class="copy-answer-btn" data-text="{{ item.response|striptags|trim }}"><i class="fas fa-copy"></i> Copy</button>
                                 </div>
                             </div>
                         </div>
@@ -64,10 +59,9 @@
                     <input type="text" id="queryInput" placeholder="Ask me anything...">
                     <button type="submit" id="submitBtn"><i class="fas fa-paper-plane"></i> Send</button>
                 </div>
-                <div class="suggestions">
-                    </div>
             </form>
         </div>
     </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>
