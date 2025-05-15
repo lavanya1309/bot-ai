@@ -44,6 +44,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function attachDeleteEventListeners() {
+        const deleteButtons = document.querySelectorAll('.delete-chat-btn');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', async function(event) {
+                event.stopPropagation(); // Prevent loading the chat when delete is clicked
+                const filename = this.dataset.filename;
+                if (confirm('Are you sure you want to delete this chat?')) {
+                    try {
+                        const response = await fetch('/delete_chat', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: `filename=${encodeURIComponent(filename)}`
+                        });
+                        if (!response.ok) {
+                            console.error('Error deleting chat:', response.status);
+                            return;
+                        }
+                        const data = await response.json();
+                        if (data.success) {
+                            await updatePreviousChats(); // Reload the list of chats
+                            clearChatDisplay(); // Optionally clear the chat area
+                        } else {
+                            console.error('Error deleting chat:', data.error);
+                            alert('Failed to delete chat.');
+                        }
+                    } catch (error) {
+                        console.error('Fetch error deleting chat:', error);
+                        alert('An error occurred while deleting the chat.');
+                    }
+                }
+            });
+        });
+
         const copyButtons = document.querySelectorAll('.copy-button, .copy-answer-btn');
         copyButtons.forEach(button => {
             button.addEventListener('click', function() {
@@ -160,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (sender === 'ai') {
             let formattedMessage = message;
             formattedMessage = formattedMessage.replace(/<div class="code-block"><pre><code class="([^"]*)">([\s\S]*?)<\/code><\/pre><\/div>/g, (match, language, code) => {
-                const escapedCode = code.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+                constescapedCode = code.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
                 return `
                     <div class="code-block">
                         <pre><code class="${language}">${code}</code></pre>
@@ -307,5 +341,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // The initial call to attachCopyEventListeners is removed as we are attaching them inline
+    updatePreviousChats(); // Initial load of previous chats
 });
