@@ -3,7 +3,7 @@ name: Deploy to Azure VM
 on:
   push:
     branches:
-      - final-1
+      - 14/05
 
 jobs:
   deploy:
