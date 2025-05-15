@@ -13,6 +13,7 @@ from io import BytesIO
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
+import uuid
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -24,7 +25,9 @@ MODEL = "llama3-70b-8192"
 
 # Directory to store chat history
 CHAT_HISTORY_DIR = "chat_history"
+DOCUMENT_DIR = "generated_documents"
 os.makedirs(CHAT_HISTORY_DIR, exist_ok=True)
+os.makedirs(DOCUMENT_DIR, exist_ok=True)
 
 # Store the current conversation
 current_conversation = []
@@ -100,59 +103,68 @@ def format_tables(text):
     text = re.sub(r'(\|.*\|.*\n)(\|.*\|\n)*', process_table, text)
     return text
 
-def generate_word_document(content):
-    doc = Document()
-    doc.add_heading('Generated Document', 0)
+def generate_document(content, doc_type):
+    doc_id = str(uuid.uuid4())
+    filename = f"document_{doc_id}.{doc_type}"
+    filepath = os.path.join(DOCUMENT_DIR, filename)
     
-    # Remove markdown formatting
-    plain_text = re.sub(r'#+\s*', '', content)  # Remove headings
-    plain_text = re.sub(r'\*\*(.*?)\*\*', r'\1', plain_text)  # Remove bold
-    plain_text = re.sub(r'\*(.*?)\*', r'\1', plain_text)  # Remove italics
-    plain_text = re.sub(r'`(.*?)`', r'\1', plain_text)  # Remove code
-    plain_text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', plain_text)  # Remove links
+    if doc_type == 'docx':
+        doc = Document()
+        doc.add_heading('Generated Document', 0)
+        plain_text = re.sub(r'#+\s*', '', content)
+        plain_text = re.sub(r'\*\*(.*?)\*\*', r'\1', plain_text)
+        plain_text = re.sub(r'\*(.*?)\*', r'\1', plain_text)
+        plain_text = re.sub(r'`(.*?)`', r'\1', plain_text)
+        plain_text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', plain_text)
+        
+        for paragraph in plain_text.split('\n'):
+            if paragraph.strip():
+                doc.add_paragraph(paragraph)
+        
+        doc.save(filepath)
+        
+    elif doc_type == 'pdf':
+        doc = SimpleDocTemplate(filepath, pagesize=letter)
+        styles = getSampleStyleSheet()
+        
+        plain_text = re.sub(r'#+\s*', '', content)
+        plain_text = re.sub(r'\*\*(.*?)\*\*', r'\1', plain_text)
+        plain_text = re.sub(r'\*(.*?)\*', r'\1', plain_text)
+        plain_text = re.sub(r'`(.*?)`', r'\1', plain_text)
+        plain_text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', plain_text)
+        
+        story = []
+        for paragraph in plain_text.split('\n'):
+            if paragraph.strip():
+                story.append(Paragraph(paragraph, styles["Normal"]))
+        
+        doc.build(story)
+        
+    elif doc_type == 'txt':
+        plain_text = re.sub(r'#+\s*', '', content)
+        plain_text = re.sub(r'\*\*(.*?)\*\*', r'\1', plain_text)
+        plain_text = re.sub(r'\*(.*?)\*', r'\1', plain_text)
+        plain_text = re.sub(r'`(.*?)`', r'\1', plain_text)
+        plain_text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', plain_text)
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(plain_text)
     
-    for paragraph in plain_text.split('\n'):
-        if paragraph.strip():
-            doc.add_paragraph(paragraph)
-    
-    file_stream = BytesIO()
-    doc.save(file_stream)
-    file_stream.seek(0)
-    return file_stream
+    return filename
 
-def generate_pdf_document(content):
-    file_stream = BytesIO()
-    doc = SimpleDocTemplate(file_stream, pagesize=letter)
-    styles = getSampleStyleSheet()
+def generate_document_links(content):
+    doc_types = ['docx', 'pdf', 'txt']
+    links = []
     
-    # Remove markdown formatting
-    plain_text = re.sub(r'#+\s*', '', content)
-    plain_text = re.sub(r'\*\*(.*?)\*\*', r'\1', plain_text)
-    plain_text = re.sub(r'\*(.*?)\*', r'\1', plain_text)
-    plain_text = re.sub(r'`(.*?)`', r'\1', plain_text)
-    plain_text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', plain_text)
+    for doc_type in doc_types:
+        filename = generate_document(content, doc_type)
+        links.append({
+            'type': doc_type,
+            'url': f'/download_document/{filename}',
+            'icon': 'file-word' if doc_type == 'docx' else 'file-pdf' if doc_type == 'pdf' else 'file-alt'
+        })
     
-    story = []
-    for paragraph in plain_text.split('\n'):
-        if paragraph.strip():
-            story.append(Paragraph(paragraph, styles["Normal"]))
-    
-    doc.build(story)
-    file_stream.seek(0)
-    return file_stream
-
-def generate_txt_document(content):
-    # Remove markdown formatting
-    plain_text = re.sub(r'#+\s*', '', content)
-    plain_text = re.sub(r'\*\*(.*?)\*\*', r'\1', plain_text)
-    plain_text = re.sub(r'\*(.*?)\*', r'\1', plain_text)
-    plain_text = re.sub(r'`(.*?)`', r'\1', plain_text)
-    plain_text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', plain_text)
-    
-    file_stream = BytesIO()
-    file_stream.write(plain_text.encode('utf-8'))
-    file_stream.seek(0)
-    return file_stream
+    return links
 
 @app.route('/')
 def index():
@@ -172,14 +184,12 @@ def ask():
     if not query.strip():
         return jsonify({'error': 'Please enter a question'})
 
-    system_prompt = """When comparing services, provide a Markdown table with:
-1. Clear headers in first row
-2. Alignment markers in second row (|:---|:---:|)
-3. Concise but informative content
-4. All major comparison points
+    # Check if user is asking for document generation
+    document_requested = any(keyword in query.lower() for keyword in ['word document', 'pdf', 'text file', 'document', 'download', 'file'])
 
-When asked to generate documents (leave letters, reports, etc.), provide well-formatted content suitable for conversion to Word, PDF, or TXT files."""
-
+    system_prompt = """When a user asks for a document (Word, PDF, or TXT), provide the content in a clean format suitable for document generation. 
+    Include a note that document download links have been provided."""
+    
     messages = [
         {"role": "system", "content": system_prompt},
         *[
@@ -204,57 +214,81 @@ When asked to generate documents (leave letters, reports, etc.), provide well-fo
         )
         response.raise_for_status()
         reply = response.json()['choices'][0]['message']['content']
+        
+        # Generate document links if requested
+        document_links = []
+        if document_requested:
+            document_links = generate_document_links(reply)
+            reply += "\n\n**Document download links:**\n"
+            for link in document_links:
+                reply += f"- [{link['type'].upper()} Document](/download_document/{link['url'].split('/')[-1]})\n"
+        
         current_conversation.append({'query': query, 'response': reply})
 
         formatted_reply = markdown.markdown(reply)
         formatted_reply = format_code_blocks(formatted_reply)
         formatted_reply = format_tables(formatted_reply)
 
-        return jsonify({'response': formatted_reply, 'raw_response': reply})
+        return jsonify({
+            'response': formatted_reply, 
+            'raw_response': reply,
+            'document_links': document_links
+        })
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/generate_document', methods=['POST'])
-def generate_document():
-    data = request.json
-    content = data.get('content', '')
-    doc_type = data.get('type', 'docx')
+@app.route('/download_document/<filename>')
+def download_document(filename):
+    filepath = os.path.join(DOCUMENT_DIR, filename)
+    if not os.path.exists(filepath):
+        return jsonify({'error': 'File not found'}), 404
     
-    if not content:
-        return jsonify({'error': 'No content provided'}), 400
+    mimetypes = {
+        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'pdf': 'application/pdf',
+        'txt': 'text/plain'
+    }
     
+    file_ext = filename.split('.')[-1]
+    return send_file(
+        filepath,
+        as_attachment=True,
+        download_name=filename,
+        mimetype=mimetypes.get(file_ext, 'application/octet-stream')
+    )
+
+@app.route('/new_chat', methods=['POST'])
+def new_chat():
+    global current_conversation
+    if current_conversation:
+        save_chat_history(current_conversation)
+    current_conversation = []
+    return jsonify({'success': True})
+
+@app.route('/load_chat', methods=['POST'])
+def load_chat():
+    filename = request.form['filename']
     try:
-        if doc_type == 'docx':
-            file_stream = generate_word_document(content)
-            return send_file(
-                file_stream,
-                as_attachment=True,
-                download_name='document.docx',
-                mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            )
-        elif doc_type == 'pdf':
-            file_stream = generate_pdf_document(content)
-            return send_file(
-                file_stream,
-                as_attachment=True,
-                download_name='document.pdf',
-                mimetype='application/pdf'
-            )
-        elif doc_type == 'txt':
-            file_stream = generate_txt_document(content)
-            return send_file(
-                file_stream,
-                as_attachment=True,
-                download_name='document.txt',
-                mimetype='text/plain'
-            )
-        else:
-            return jsonify({'error': 'Invalid document type'}), 400
+        history = load_chat_history(filename)
+        global current_conversation
+        current_conversation = history
+        
+        formatted_history = []
+        for item in history:
+            formatted_query = markdown.markdown(item['query'])
+            formatted_response = markdown.markdown(item['response'])
+            formatted_response = format_code_blocks(formatted_response)
+            formatted_response = format_tables(formatted_response)
+            formatted_history.append({'query': formatted_query, 'response': formatted_response})
+        
+        return jsonify({'success': True, 'conversation': formatted_history})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e)})
 
-# ... [keep all other existing routes the same] ...
+@app.route('/get_last_day_chats')
+def get_last_day_chats_route():
+    return jsonify(get_last_day_chats())
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
