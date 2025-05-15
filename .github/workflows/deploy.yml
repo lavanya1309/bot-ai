@@ -3,7 +3,7 @@ name: Deploy to Azure VM
 on:
   push:
     branches:
-      - medical
+      - test-medical
 
 jobs:
   deploy:
