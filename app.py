@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
 
 # Groq AI API configuration
-GROQ_API_KEY = "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"
+GROQ_API_KEY = "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"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL = "llama3-70b-8192"
 
