@@ -54,12 +54,6 @@
                                 <div class="copy-button-container">
                                     <button class="copy-answer-btn" data-text="{{ message.response | striptags }}"><i class="fas fa-copy"></i> Copy</button>
                                 </div>
-                                <!-- Added document actions -->
-                                <div class="document-actions">
-                                    <button class="generate-doc-btn" data-type="docx" data-content="{{ message.response | striptags }}"><i class="fas fa-file-word"></i> Word</button>
-                                    <button class="generate-doc-btn" data-type="pdf" data-content="{{ message.response | striptags }}"><i class="fas fa-file-pdf"></i> PDF</button>
-                                    <button class="generate-doc-btn" data-type="txt" data-content="{{ message.response | striptags }}"><i class="fas fa-file-alt"></i> TXT</button>
-                                </div>
                             </div>
                         </div>
                     {% endfor %}
@@ -71,6 +65,9 @@
                     <button type="submit" id="submitBtn"><i class="fas fa-paper-plane"></i> Send</button>
                 </div>
                 <div class="suggestions">
+                    <button type="button" class="suggestion-btn" data-prompt="Generate a Word document about..."><i class="fas fa-file-word"></i> Word Doc</button>
+                    <button type="button" class="suggestion-btn" data-prompt="Create a PDF document summarizing..."><i class="fas fa-file-pdf"></i> PDF</button>
+                    <button type="button" class="suggestion-btn" data-prompt="Provide a text file with..."><i class="fas fa-file-alt"></i> Text File</button>
                 </div>
             </form>
         </div>
