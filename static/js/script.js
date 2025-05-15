@@ -5,7 +5,49 @@ document.addEventListener('DOMContentLoaded', function() {
     const queryInput = document.getElementById('queryInput');
     const submitBtn = document.getElementById('submitBtn');
     const previousChatsList = document.getElementById('previousChatsList');
+    const themeToggle = document.getElementById('themeToggle');
 
+    // Theme toggle functionality
+    function initializeTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        themeToggle.checked = savedTheme === 'dark';
+        updateCodeHighlightTheme(savedTheme);
+    }
+
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateCodeHighlightTheme(newTheme);
+    }
+
+    function updateCodeHighlightTheme(theme) {
+        // Remove all highlight.js styles
+        document.querySelectorAll('link[rel="stylesheet"][href*="highlight.js"]').forEach(link => {
+            link.disabled = true;
+            link.parentNode.removeChild(link);
+        });
+
+        // Add the appropriate theme
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/${theme === 'dark' ? 'github-dark' : 'github'}.min.css`;
+        document.head.appendChild(link);
+
+        // Re-highlight all code blocks
+        document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightElement(block);
+        });
+    }
+
+    if (themeToggle) {
+        initializeTheme();
+        themeToggle.addEventListener('change', toggleTheme);
+    }
+
+    // Rest of your existing code...
     function clearChatDisplay() {
         chatContainer.innerHTML = '';
     }
