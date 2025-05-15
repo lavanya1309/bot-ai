@@ -10,7 +10,9 @@
     --chat-bg: #f0f8ff;
 }
 
-* {
+*,
+*::before,
+*::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -324,9 +326,8 @@ button:hover {
     padding: 5px 8px;
     font-size: 0.8rem;
     cursor: pointer;
-
+}
 /* Add these styles to your existing style.css */
-
 .table-container {
     overflow-x: auto;
     margin: 15px 0;
@@ -368,8 +369,8 @@ button:hover {
 .comparison-table tbody tr:hover {
     background-color: #f1f1f1;
 }
-
 /* Add this to your existing :root variables if not present */
+
 :root {
     --primary-color: #4361ee;
     --secondary-color: #3a0ca3;
@@ -381,8 +382,8 @@ button:hover {
     --new-chat-hover: #3a0ca3;
     --chat-bg: #f0f8ff;
 }
-
 /* Table Styles */
+
 /* Table Styles */
 .table-container {
     width: 100%;
@@ -438,17 +439,13 @@ button:hover {
         border: 1px solid #e0e0e0;
         box-shadow: none;
     }
-    
     .comparison-table {
         font-size: 0.85em;
         min-width: 100%;
     }
-    
+
     .comparison-table th,
     .comparison-table td {
         padding: 10px 12px;
     }
 }
-
-
-
