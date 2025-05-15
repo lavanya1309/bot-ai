@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const queryInput = document.getElementById('queryInput');
     const submitBtn = document.getElementById('submitBtn');
     const previousChatsList = document.getElementById('previousChatsList');
+    const suggestionBtns = document.querySelectorAll('.suggestion-btn');
 
     function clearChatDisplay() {
         chatContainer.innerHTML = '';
@@ -18,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             const chats = await response.json();
-            previousChatsList.innerHTML = ''; // Clear the current list
+            previousChatsList.innerHTML = '';
             if (chats.length > 0) {
                 chats.forEach(chat => {
                     const li = document.createElement('li');
@@ -37,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 li.textContent = 'No recent chats';
                 previousChatsList.appendChild(li);
             }
-            attachDeleteEventListeners(); // Attach listeners after updating the list
+            attachDeleteEventListeners();
         } catch (error) {
             console.error('Error updating previous chats:', error);
         }
@@ -54,22 +55,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     textToCopy = this.dataset.text;
                 }
 
-                console.log('Attempting to copy:', textToCopy); // Keep this for debugging
-
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(textToCopy)
                         .then(() => {
-                            console.log('Text copied to clipboard successfully!');
-                            this.textContent = 'Copied!'; // Simple visual feedback
+                            this.textContent = 'Copied!';
                             setTimeout(() => {
-                                this.innerHTML = '<i class="fas fa-copy"></i> Copy'; // Revert text
+                                this.innerHTML = '<i class="fas fa-copy"></i> Copy';
                             }, 1500);
                         })
                         .catch(err => {
                             console.error('Failed to copy text: ', err);
-                            this.textContent = 'Error'; // Indicate an error
+                            this.textContent = 'Error';
                             setTimeout(() => {
-                                this.innerHTML = '<i class="fas fa-copy"></i> Copy'; // Revert text
+                                this.innerHTML = '<i class="fas fa-copy"></i> Copy';
                             }, 1500);
                         });
                 } else {
@@ -79,6 +77,14 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    // Add event listeners for suggestion buttons
+    suggestionBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            queryInput.value = this.dataset.prompt;
+            queryInput.focus();
+        });
+    });
 
     newChatBtn.addEventListener('click', async function() {
         clearChatDisplay();
@@ -92,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             const data = await response.json();
             if (data.success) {
-                await updatePreviousChats(); // Fetch and update the previous chats list
+                await updatePreviousChats();
             }
         } catch (error) {
             console.error('Error communicating new chat to backend:', error);
@@ -125,10 +131,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 const data = await response.json();
-                if (data.is_error) {
+                if (data.error) {
                     appendMessage('ai', data.error);
                 } else {
-                    appendMessage('ai', data.response);
+                    appendMessage('ai', data.response, data.document_links);
                 }
             } catch (error) {
                 console.error('Fetch error:', error);
@@ -145,10 +151,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    function appendMessage(sender, message) {
+    function appendMessage(sender, message, documentLinks = []) {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message';
-        let contentDiv;
+        
         if (sender === 'user') {
             const userContent = `<div class="content">${message}</div>`;
             messageDiv.innerHTML = `
@@ -168,7 +174,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
             });
-            console.log("Raw AI Message:", message);
             
             const aiMessage = document.createElement('div');
             aiMessage.className = 'ai-message';
@@ -180,94 +185,65 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
             
-            // Add document generation buttons
-            const docActions = document.createElement('div');
-            docActions.className = 'document-actions';
-            docActions.innerHTML = `
-                <button class="generate-doc-btn" data-type="docx" data-content="${message.replace(/<[^>]*>?/gm, '').trim()}"><i class="fas fa-file-word"></i> Word</button>
-                <button class="generate-doc-btn" data-type="pdf" data-content="${message.replace(/<[^>]*>?/gm, '').trim()}"><i class="fas fa-file-pdf"></i> PDF</button>
-                <button class="generate-doc-btn" data-type="txt" data-content="${message.replace(/<[^>]*>?/gm, '').trim()}"><i class="fas fa-file-alt"></i> TXT</button>
-            `;
-            aiMessage.appendChild(docActions);
+            // Add document download links if available
+            if (documentLinks && documentLinks.length > 0) {
+                const docLinksDiv = document.createElement('div');
+                docLinksDiv.className = 'document-links';
+                docLinksDiv.innerHTML = '<p><strong>Download documents:</strong></p>';
+                
+                const linksList = document.createElement('div');
+                linksList.className = 'links-container';
+                
+                documentLinks.forEach(link => {
+                    const linkElement = document.createElement('a');
+                    linkElement.href = link.url;
+                    linkElement.className = 'document-link';
+                    linkElement.innerHTML = `<i class="fas fa-${link.icon}"></i> ${link.type.toUpperCase()}`;
+                    linkElement.target = '_blank';
+                    linksList.appendChild(linkElement);
+                });
+                
+                docLinksDiv.appendChild(linksList);
+                aiMessage.appendChild(docLinksDiv);
+            }
             
             messageDiv.appendChild(aiMessage);
-
-            // Attach event listeners for document generation buttons
-            const docButtons = messageDiv.querySelectorAll('.generate-doc-btn');
-            docButtons.forEach(button => {
-                button.addEventListener('click', async function() {
-                    const docType = this.dataset.type;
-                    const content = this.dataset.content;
-                    
-                    try {
-                        const response = await fetch('/generate_document', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                content: content,
-                                type: docType
-                            })
-                        });
-                        
-                        if (!response.ok) {
-                            throw new Error('Failed to generate document');
-                        }
-                        
-                        const blob = await response.blob();
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `document.${docType}`;
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        a.remove();
-                    } catch (error) {
-                        console.error('Error generating document:', error);
-                        alert('Failed to generate document. Please try again.');
-                    }
-                });
-            });
-            
-            // Attach copy button event listeners
-            const copyButtons = messageDiv.querySelectorAll('.copy-button, .copy-answer-btn');
-            copyButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    let textToCopy = '';
-                    if (this.dataset.code) {
-                        textToCopy = decodeURIComponent(this.dataset.code);
-                    } else if (this.dataset.text) {
-                        textToCopy = this.dataset.text;
-                    }
-
-                    console.log('Attempting to copy (inline):', textToCopy);
-
-                    if (navigator.clipboard && navigator.clipboard.writeText) {
-                        navigator.clipboard.writeText(textToCopy)
-                            .then(() => {
-                                console.log('Text copied to clipboard successfully! (inline)');
-                                this.textContent = 'Copied!';
-                                setTimeout(() => {
-                                    this.innerHTML = '<i class="fas fa-copy"></i> Copy';
-                                }, 1500);
-                            })
-                            .catch(err => {
-                                console.error('Failed to copy text (inline): ', err);
-                                this.textContent = 'Error';
-                                setTimeout(() => {
-                                    this.innerHTML = '<i class="fas fa-copy"></i> Copy';
-                                }, 1500);
-                            });
-                    } else {
-                        console.error('Clipboard API not available in this browser. (inline)');
-                        alert('Clipboard API not available. Please copy manually.');
-                    }
-                });
-            });
         }
+        
         chatContainer.appendChild(messageDiv);
+        
+        // Attach copy button event listeners
+        const copyButtons = messageDiv.querySelectorAll('.copy-button, .copy-answer-btn');
+        copyButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                let textToCopy = '';
+                if (this.dataset.code) {
+                    textToCopy = decodeURIComponent(this.dataset.code);
+                } else if (this.dataset.text) {
+                    textToCopy = this.dataset.text;
+                }
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(textToCopy)
+                        .then(() => {
+                            this.textContent = 'Copied!';
+                            setTimeout(() => {
+                                this.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                            }, 1500);
+                        })
+                        .catch(err => {
+                            console.error('Failed to copy text: ', err);
+                            this.textContent = 'Error';
+                            setTimeout(() => {
+                                this.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                            }, 1500);
+                        });
+                } else {
+                    console.error('Clipboard API not available in this browser.');
+                    alert('Clipboard API not available. Please copy manually.');
+                }
+            });
+        });
     }
 
     if (previousChatsList) {
@@ -307,41 +283,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             `;
                             chatContainer.appendChild(messageDiv);
-                            // Attach listeners after loading previous chat messages as well
-                            const copyButtons = messageDiv.querySelectorAll('.copy-button, .copy-answer-btn');
-                            copyButtons.forEach(button => {
-                                button.addEventListener('click', function() {
-                                    let textToCopy = '';
-                                    if (this.dataset.code) {
-                                        textToCopy = decodeURIComponent(this.dataset.code);
-                                    } else if (this.dataset.text) {
-                                        textToCopy = this.dataset.text;
-                                    }
-
-                                    console.log('Attempting to copy (load chat):', textToCopy);
-
-                                    if (navigator.clipboard && navigator.clipboard.writeText) {
-                                        navigator.clipboard.writeText(textToCopy)
-                                            .then(() => {
-                                                console.log('Text copied to clipboard successfully! (load chat)');
-                                                this.textContent = 'Copied!';
-                                                setTimeout(() => {
-                                                    this.innerHTML = '<i class="fas fa-copy"></i> Copy';
-                                                }, 1500);
-                                            })
-                                            .catch(err => {
-                                                console.error('Failed to copy text (load chat): ', err);
-                                                this.textContent = 'Error';
-                                                setTimeout(() => {
-                                                    this.innerHTML = '<i class="fas fa-copy"></i> Copy';
-                                                }, 1500);
-                                            });
-                                    } else {
-                                        console.error('Clipboard API not available in this browser. (load chat)');
-                                        alert('Clipboard API not available. Please copy manually.');
-                                    }
-                                });
-                            });
                         });
                         document.querySelectorAll('pre code').forEach((block) => {
                             hljs.highlightElement(block);
