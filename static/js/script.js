@@ -128,6 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             messageDiv.innerHTML = `
                 <div class="ai-message">
+                    <div class="ai-avatar"><i class="fas fa-robot"></i></div>
                     <div class="message-content">${formattedMessage}</div>
                 </div>
             `;
@@ -211,6 +212,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.success) {
                         chatContainer.innerHTML = '';
                         data.conversation.forEach(item => {
+                            const aiDiv = document.createElement('div');
+                            aiDiv.className = 'message';
+                            aiDiv.innerHTML = `
+                                <div class="ai-message">
+                                    <div class="ai-avatar"><i class="fas fa-robot"></i></div>
+                                    <div class="message-content">${item.response}</div>
+                                </div>
+                            `;
+                            chatContainer.appendChild(aiDiv);
+
                             const userDiv = document.createElement('div');
                             userDiv.className = 'message';
                             userDiv.innerHTML = `
@@ -219,15 +230,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                             `;
                             chatContainer.appendChild(userDiv);
-
-                            const aiDiv = document.createElement('div');
-                            aiDiv.className = 'message';
-                            aiDiv.innerHTML = `
-                                <div class="ai-message">
-                                    <div class="message-content">${item.response}</div>
-                                </div>
-                            `;
-                            chatContainer.appendChild(aiDiv);
                         });
                         document.querySelectorAll('pre code').forEach((block) => {
                             hljs.highlightElement(block);
