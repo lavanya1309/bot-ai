@@ -169,16 +169,69 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             });
             console.log("Raw AI Message:", message);
-            messageDiv.innerHTML = `
-                <div class="ai-message">
-                    <div class="avatar"><i class="fas fa-robot"></i></div>
-                    <div class="content">${formattedMessage}</div>
-                    <div class="copy-button-container">
-                        <button class="copy-answer-btn" data-text="${message.replace(/<[^>]*>?/gm, '').trim()}"><i class="fas fa-copy"></i> Copy</button>
-                    </div>
+            
+            const aiMessage = document.createElement('div');
+            aiMessage.className = 'ai-message';
+            aiMessage.innerHTML = `
+                <div class="avatar"><i class="fas fa-robot"></i></div>
+                <div class="content">${formattedMessage}</div>
+                <div class="copy-button-container">
+                    <button class="copy-answer-btn" data-text="${message.replace(/<[^>]*>?/gm, '').trim()}"><i class="fas fa-copy"></i> Copy</button>
                 </div>
             `;
-            // Attach event listeners IMMEDIATELY after the buttons are added to the DOM
+            
+            // Add document generation buttons
+            const docActions = document.createElement('div');
+            docActions.className = 'document-actions';
+            docActions.innerHTML = `
+                <button class="generate-doc-btn" data-type="docx" data-content="${message.replace(/<[^>]*>?/gm, '').trim()}"><i class="fas fa-file-word"></i> Word</button>
+                <button class="generate-doc-btn" data-type="pdf" data-content="${message.replace(/<[^>]*>?/gm, '').trim()}"><i class="fas fa-file-pdf"></i> PDF</button>
+                <button class="generate-doc-btn" data-type="txt" data-content="${message.replace(/<[^>]*>?/gm, '').trim()}"><i class="fas fa-file-alt"></i> TXT</button>
+            `;
+            aiMessage.appendChild(docActions);
+            
+            messageDiv.appendChild(aiMessage);
+
+            // Attach event listeners for document generation buttons
+            const docButtons = messageDiv.querySelectorAll('.generate-doc-btn');
+            docButtons.forEach(button => {
+                button.addEventListener('click', async function() {
+                    const docType = this.dataset.type;
+                    const content = this.dataset.content;
+                    
+                    try {
+                        const response = await fetch('/generate_document', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                content: content,
+                                type: docType
+                            })
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error('Failed to generate document');
+                        }
+                        
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `document.${docType}`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+                    } catch (error) {
+                        console.error('Error generating document:', error);
+                        alert('Failed to generate document. Please try again.');
+                    }
+                });
+            });
+            
+            // Attach copy button event listeners
             const copyButtons = messageDiv.querySelectorAll('.copy-button, .copy-answer-btn');
             copyButtons.forEach(button => {
                 button.addEventListener('click', function() {
@@ -215,8 +268,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         chatContainer.appendChild(messageDiv);
-        // We are now attaching the listeners directly, so no need for a separate call here
-        // attachCopyEventListeners();
     }
 
     if (previousChatsList) {
@@ -296,7 +347,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             hljs.highlightElement(block);
                         });
                         chatContainer.scrollTop = chatContainer.scrollHeight;
-                        // No need for separate attachCopyEventListeners here now
                     } else {
                         console.error('Error loading chat:', data.error);
                     }
@@ -306,6 +356,4 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
-    // The initial call to attachCopyEventListeners is removed as we are attaching them inline
 });
